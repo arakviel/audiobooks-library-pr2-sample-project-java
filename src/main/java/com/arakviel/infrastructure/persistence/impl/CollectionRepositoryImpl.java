@@ -6,17 +6,16 @@ import com.arakviel.infrastructure.persistence.GenericRepository;
 import com.arakviel.infrastructure.persistence.contract.CollectionRepository;
 import com.arakviel.infrastructure.persistence.exception.DatabaseAccessException;
 import com.arakviel.infrastructure.persistence.util.ConnectionPool;
+import org.springframework.stereotype.Repository;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.List;
 import java.util.UUID;
 
 /**
  * Реалізація репозиторію для специфічних операцій з колекціями.
  */
+@Repository
 public class CollectionRepositoryImpl extends GenericRepository<Collection, UUID> implements CollectionRepository {
 
     /**
@@ -52,6 +51,18 @@ public class CollectionRepositoryImpl extends GenericRepository<Collection, UUID
     }
 
     /**
+     * Пошук колекцій за ідентифікатором аудіокниги.
+     *
+     * @param audiobookId ідентифікатор аудіокниги
+     * @return список колекцій
+     */
+    @Override
+    public List<Collection> findByAudiobookId(UUID audiobookId) {
+        String baseSql = "SELECT c.* FROM collections c JOIN audiobook_collection ac ON c.id = ac.collection_id WHERE ac.audiobook_id = ?";
+        return executeQuery(baseSql, stmt -> stmt.setObject(1, audiobookId), this::mapResultSetToCollection);
+    }
+
+    /**
      * Прикріплення аудіокниги до колекції.
      *
      * @param collectionId ідентифікатор колекції
@@ -67,6 +78,68 @@ public class CollectionRepositoryImpl extends GenericRepository<Collection, UUID
             statement.executeUpdate();
         } catch (SQLException e) {
             throw new DatabaseAccessException("Помилка прикріплення аудіокниги до колекції: " + sql, e);
+        }
+    }
+
+    /**
+     * Від'єднання аудіокниги від колекції.
+     *
+     * @param collectionId ідентифікатор колекції
+     * @param audiobookId  ідентифікатор аудіокниги
+     */
+    @Override
+    public void detachAudiobookFromCollection(UUID collectionId, UUID audiobookId) {
+        String sql = "DELETE FROM audiobook_collection WHERE collection_id = ? AND audiobook_id = ?";
+        try (Connection connection = connectionPool.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setObject(1, collectionId);
+            statement.setObject(2, audiobookId);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            throw new DatabaseAccessException("Помилка від'єднання аудіокниги від колекції: " + sql, e);
+        }
+    }
+
+    /**
+     * Підрахунок аудіокниг у колекції.
+     *
+     * @param collectionId ідентифікатор колекції
+     * @return кількість аудіокниг
+     */
+    @Override
+    public long countAudiobooksByCollectionId(UUID collectionId) {
+        Filter filter = (whereClause, params) -> {
+            whereClause.add("collection_id = ?");
+            params.add(collectionId);
+        };
+        return count(filter, "audiobook_collection");
+    }
+
+    /**
+     * Пошук колекцій за назвою.
+     *
+     * @param name назва колекції
+     * @return список колекцій
+     */
+    @Override
+    public List<Collection> findByName(String name) {
+        return findByField("name", name);
+    }
+
+    /**
+     * Видалення всіх аудіокниг із колекції.
+     *
+     * @param collectionId ідентифікатор колекції
+     */
+    @Override
+    public void clearCollection(UUID collectionId) {
+        String sql = "DELETE FROM audiobook_collection WHERE collection_id = ?";
+        try (Connection connection = connectionPool.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setObject(1, collectionId);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            throw new DatabaseAccessException("Помилка очищення колекції: " + sql, e);
         }
     }
 
@@ -90,6 +163,26 @@ public class CollectionRepositoryImpl extends GenericRepository<Collection, UUID
             return audiobook;
         } catch (Exception e) {
             throw new DatabaseAccessException("Помилка зіставлення ResultSet із аудіокнигою", e);
+        }
+    }
+
+    /**
+     * Зіставлення ResultSet у колекцію.
+     *
+     * @param rs результат запиту
+     * @return колекція
+     */
+    private Collection mapResultSetToCollection(ResultSet rs) {
+        try {
+            Collection collection = new Collection();
+            collection.setId(rs.getObject("id", UUID.class));
+            collection.setUserId(rs.getObject("user_id", UUID.class));
+            collection.setName(rs.getString("name"));
+            Timestamp createdAt = rs.getTimestamp("created_at");
+            collection.setCreatedAt(createdAt != null ? createdAt.toLocalDateTime() : null);
+            return collection;
+        } catch (Exception e) {
+            throw new DatabaseAccessException("Помилка зіставлення ResultSet із колекцією", e);
         }
     }
 }

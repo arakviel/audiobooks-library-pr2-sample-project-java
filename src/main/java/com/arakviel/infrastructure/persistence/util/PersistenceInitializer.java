@@ -1,6 +1,7 @@
 package com.arakviel.infrastructure.persistence.util;
 
 import com.arakviel.infrastructure.persistence.exception.DatabaseAccessException;
+import org.springframework.stereotype.Component;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -13,6 +14,7 @@ import java.util.stream.Collectors;
 /**
  * Ініціалізатор бази даних для виконання DDL та DML скриптів.
  */
+@Component
 public class PersistenceInitializer {
 
     private static final String DDL_SCRIPT_PATH = "db/ddl_h2.sql";

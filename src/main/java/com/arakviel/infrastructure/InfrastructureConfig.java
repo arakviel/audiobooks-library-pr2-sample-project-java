@@ -1,18 +1,17 @@
 package com.arakviel.infrastructure;
 
-import com.arakviel.domain.entities.*;
-import com.arakviel.infrastructure.persistence.PersistenceContext;
-import com.arakviel.infrastructure.persistence.contract.*;
-import com.arakviel.infrastructure.persistence.impl.*;
+import com.arakviel.infrastructure.file.FileStorageService;
+import com.arakviel.infrastructure.file.impl.FileStorageServiceImpl;
 import com.arakviel.infrastructure.persistence.util.ConnectionPool;
 import com.arakviel.infrastructure.persistence.util.ConnectionPool.PoolConfig;
-import com.arakviel.infrastructure.persistence.util.PersistenceInitializer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 
 @Configuration
+@ComponentScan("com.arakviel.infrastructure")
 @PropertySource("classpath:application.properties")
 public class InfrastructureConfig {
 
@@ -31,6 +30,15 @@ public class InfrastructureConfig {
     @Value("${db.auto.commit}")
     private boolean dbAutoCommit;
 
+    @Value("${file.storage.root}")
+    private String storageRootPath;
+
+    @Value("${file.storage.allowed-extensions}")
+    private String[] allowedExtensions;
+
+    @Value("${file.storage.max-size}")
+    private long maxFileSize;
+
     @Bean
     public ConnectionPool connectionPool() {
         PoolConfig poolConfig = new PoolConfig.Builder()
@@ -40,67 +48,11 @@ public class InfrastructureConfig {
                 .withMaxConnections(dbPoolSize)
                 .withAutoCommit(dbAutoCommit)
                 .build();
-        return ConnectionPool.getInstance(poolConfig);
+        return new ConnectionPool(poolConfig);
     }
 
     @Bean
-    public PersistenceContext persistenceContext(ConnectionPool connectionPool,
-                                                 AudiobookRepository audiobookRepository,
-                                                 AudiobookFileRepository audiobookFileRepository,
-                                                 AuthorRepository authorRepository,
-                                                 GenreRepository genreRepository,
-                                                 CollectionRepository collectionRepository,
-                                                 ListeningProgressRepository listeningProgressRepository,
-                                                 UserRepository userRepository) {
-        PersistenceContext persistenceContext = new PersistenceContext(connectionPool);
-
-        persistenceContext.registerRepository(Audiobook.class, audiobookRepository);
-        persistenceContext.registerRepository(AudiobookFile.class, audiobookFileRepository);
-        persistenceContext.registerRepository(Author.class, authorRepository);
-        persistenceContext.registerRepository(Genre.class, genreRepository);
-        persistenceContext.registerRepository(Collection.class, collectionRepository);
-        persistenceContext.registerRepository(ListeningProgress.class, listeningProgressRepository);
-        persistenceContext.registerRepository(User.class, userRepository);
-        return persistenceContext;
-    }
-
-    @Bean
-    public AudiobookRepository audiobookRepository(ConnectionPool connectionPool) {
-        return new AudiobookRepositoryImpl(connectionPool);
-    }
-
-    @Bean
-    public AudiobookFileRepository audiobookFileRepository(ConnectionPool connectionPool) {
-        return new AudiobookFileRepositoryImpl(connectionPool);
-    }
-
-    @Bean
-    public AuthorRepository authorRepository(ConnectionPool connectionPool) {
-        return new AuthorRepositoryImpl(connectionPool);
-    }
-
-    @Bean
-    public GenreRepository genreRepository(ConnectionPool connectionPool) {
-        return new GenreRepositoryImpl(connectionPool);
-    }
-
-    @Bean
-    public CollectionRepository collectionRepository(ConnectionPool connectionPool) {
-        return new CollectionRepositoryImpl(connectionPool);
-    }
-
-    @Bean
-    public ListeningProgressRepository listeningProgressRepository(ConnectionPool connectionPool) {
-        return new ListeningProgressRepositoryImpl(connectionPool);
-    }
-
-    @Bean
-    public UserRepository userRepository(ConnectionPool connectionPool) {
-        return new UserRepositoryImpl(connectionPool);
-    }
-
-    @Bean
-    public PersistenceInitializer persistenceInitializer(ConnectionPool connectionPool) {
-        return new PersistenceInitializer(connectionPool);
+    public FileStorageService fileStorageService() {
+        return new FileStorageServiceImpl(storageRootPath, allowedExtensions, maxFileSize);
     }
 }

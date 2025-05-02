@@ -36,8 +36,6 @@ public interface AudiobookRepository extends Repository<Audiobook, UUID> {
      */
     List<AudiobookFile> findFilesByAudiobookId(UUID audiobookId);
 
-    // TODO: мені не потрібний findByCollectionId.
-
     /**
      * Пошук усіх аудіокниг у колекції користувача (зв’язок багато-до-багатьох).
      *
@@ -45,4 +43,37 @@ public interface AudiobookRepository extends Repository<Audiobook, UUID> {
      * @return список аудіокниг
      */
     List<Audiobook> findByCollectionId(UUID collectionId);
+
+    /**
+     * Пошук аудіокниг за роком випуску.
+     *
+     * @param year рік випуску
+     * @return список аудіокниг
+     */
+    List<Audiobook> findByReleaseYear(int year);
+
+    /**
+     * Пошук аудіокниг за діапазоном тривалості.
+     *
+     * @param minDuration мінімальна тривалість (у секундах)
+     * @param maxDuration максимальна тривалість (у секундах)
+     * @return список аудіокниг
+     */
+    List<Audiobook> findByDurationRange(int minDuration, int maxDuration);
+
+    /**
+     * Підрахунок кількості аудіокниг для автора.
+     *
+     * @param authorId ідентифікатор автора
+     * @return кількість аудіокниг
+     */
+    long countByAuthorId(UUID authorId);
+
+    /**
+     * Підрахунок кількості аудіокниг для жанру.
+     *
+     * @param genreId ідентифікатор жанру
+     * @return кількість аудіокниг
+     */
+    long countByGenreId(UUID genreId);
 }

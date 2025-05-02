@@ -1,7 +1,11 @@
 package com.arakviel.infrastructure.persistence;
 
+import com.arakviel.domain.entities.*;
+import com.arakviel.infrastructure.persistence.contract.*;
 import com.arakviel.infrastructure.persistence.exception.DatabaseAccessException;
 import com.arakviel.infrastructure.persistence.util.ConnectionPool;
+import jakarta.annotation.PostConstruct;
+import org.springframework.stereotype.Component;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -14,9 +18,17 @@ import java.util.Map;
  * Реалізація патерну Unit of Work для управління транзакціями та змінами сутностей.
  * Відстежує створені, оновлені та видалені сутності, застосовуючи зміни в одній транзакції.
  */
+@Component
 public class PersistenceContext {
 
     private final ConnectionPool connectionPool;
+    private final AudiobookRepository audiobookRepository;
+    private final AudiobookFileRepository audiobookFileRepository;
+    private final AuthorRepository authorRepository;
+    private final GenreRepository genreRepository;
+    private final CollectionRepository collectionRepository;
+    private final ListeningProgressRepository listeningProgressRepository;
+    private final UserRepository userRepository;
     private Connection connection;
     private final Map<Class<?>, Repository<?, ?>> repositories;
     private final List<Object> newEntities;
@@ -28,13 +40,40 @@ public class PersistenceContext {
      *
      * @param connectionPool пул з'єднань для управління з'єднаннями
      */
-    public PersistenceContext(ConnectionPool connectionPool) {
+    public PersistenceContext(ConnectionPool connectionPool,
+                              AudiobookRepository audiobookRepository,
+                              AudiobookFileRepository audiobookFileRepository,
+                              AuthorRepository authorRepository,
+                              GenreRepository genreRepository,
+                              CollectionRepository collectionRepository,
+                              ListeningProgressRepository listeningProgressRepository,
+                              UserRepository userRepository) {
         this.connectionPool = connectionPool;
+
+        this.audiobookRepository = audiobookRepository;
+        this.audiobookFileRepository = audiobookFileRepository;
+        this.authorRepository = authorRepository;
+        this.genreRepository = genreRepository;
+        this.collectionRepository = collectionRepository;
+        this.listeningProgressRepository = listeningProgressRepository;
+        this.userRepository = userRepository;
+
         this.repositories = new HashMap<>();
         this.newEntities = new ArrayList<>();
         this.updatedEntities = new HashMap<>();
         this.deletedEntities = new ArrayList<>();
         initializeConnection();
+    }
+
+    @PostConstruct
+    private void init() {
+        this.registerRepository(Audiobook.class, audiobookRepository);
+        this.registerRepository(AudiobookFile.class, audiobookFileRepository);
+        this.registerRepository(Author.class, authorRepository);
+        this.registerRepository(Genre.class, genreRepository);
+        this.registerRepository(Collection.class, collectionRepository);
+        this.registerRepository(ListeningProgress.class, listeningProgressRepository);
+        this.registerRepository(User.class, userRepository);
     }
 
     /**
@@ -104,7 +143,7 @@ public class PersistenceContext {
             // Видалення сутностей
             for (Object entity : deletedEntities) {
                 Repository<Object, Object> repository = getRepository(entity.getClass());
-                Object id = extractId(entity);
+                Object id = repository.extractId(entity);
                 repository.delete(id);
             }
 
@@ -170,23 +209,5 @@ public class PersistenceContext {
             throw new IllegalStateException("Репозиторій для " + entityClass.getSimpleName() + " не зареєстровано");
         }
         return repository;
-    }
-
-    /**
-     * TODO: перенести це в репозиторій.
-     * <p>
-     * Витягнення ідентифікатора з сутності через рефлексію.
-     *
-     * @param entity сутність
-     * @return ідентифікатор
-     */
-    private Object extractId(Object entity) {
-        try {
-            var idField = entity.getClass().getDeclaredField("id");
-            idField.setAccessible(true);
-            return idField.get(entity);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            throw new IllegalStateException("Не вдалося отримати ідентифікатор для " + entity.getClass().getSimpleName(), e);
-        }
     }
 }

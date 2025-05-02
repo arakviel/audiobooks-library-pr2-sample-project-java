@@ -44,4 +44,44 @@ public interface UserRepository extends Repository<User, UUID> {
      * @return список записів прогресу
      */
     List<ListeningProgress> findListeningProgressByUserId(UUID userId);
+
+    /**
+     * Пошук користувачів за частковою відповідністю імені.
+     *
+     * @param partialUsername часткове ім’я користувача
+     * @return список користувачів
+     */
+    List<User> findByPartialUsername(String partialUsername);
+
+    /**
+     * Підрахунок колекцій користувача.
+     *
+     * @param userId ідентифікатор користувача
+     * @return кількість колекцій
+     */
+    long countCollectionsByUserId(UUID userId);
+
+    /**
+     * Підрахунок записів прогресу прослуховування.
+     *
+     * @param userId ідентифікатор користувача
+     * @return кількість записів прогресу
+     */
+    long countListeningProgressByUserId(UUID userId);
+
+    /**
+     * Перевірка існування користувача за ім’ям.
+     *
+     * @param username ім’я користувача
+     * @return true, якщо користувач існує
+     */
+    boolean existsByUsername(String username);
+
+    /**
+     * Перевірка існування користувача за електронною поштою.
+     *
+     * @param email електронна пошта
+     * @return true, якщо користувач існує
+     */
+    boolean existsByEmail(String email);
 }

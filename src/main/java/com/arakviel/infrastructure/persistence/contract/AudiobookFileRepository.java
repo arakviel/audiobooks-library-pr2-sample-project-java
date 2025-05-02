@@ -27,4 +27,21 @@ public interface AudiobookFileRepository extends Repository<AudiobookFile, UUID>
      * @return список файлів аудіокниги
      */
     List<AudiobookFile> findByFormat(FileFormat format);
+
+    /**
+     * Підрахунок файлів для аудіокниги.
+     *
+     * @param audiobookId ідентифікатор аудіокниги
+     * @return кількість файлів
+     */
+    long countByAudiobookId(UUID audiobookId);
+
+    /**
+     * Пошук файлів за діапазоном розміру.
+     *
+     * @param minSize мінімальний розмір (у байтах)
+     * @param maxSize максимальний розмір (у байтах)
+     * @return список файлів
+     */
+    List<AudiobookFile> findBySizeRange(int minSize, int maxSize);
 }

@@ -28,5 +28,35 @@ public interface GenreRepository extends Repository<Genre, UUID> {
      */
     List<Audiobook> findAudiobooksByGenreId(UUID genreId);
 
-    // TODO: мені треба List<Genre> по UUID audiobookId, а не findAudiobooksByGenreId.
+    /**
+     * Пошук жанрів за ідентифікатором аудіокниги.
+     *
+     * @param audiobookId ідентифікатор аудіокниги
+     * @return список жанрів
+     */
+    List<Genre> findByAudiobookId(UUID audiobookId);
+
+    /**
+     * Пошук жанрів за частковою відповідністю назви.
+     *
+     * @param partialName часткова назва жанру
+     * @return список жанрів
+     */
+    List<Genre> findByPartialName(String partialName);
+
+    /**
+     * Підрахунок аудіокниг для жанру.
+     *
+     * @param genreId ідентифікатор жанру
+     * @return кількість аудіокниг
+     */
+    long countAudiobooksByGenreId(UUID genreId);
+
+    /**
+     * Перевірка існування жанру за назвою.
+     *
+     * @param name назва жанру
+     * @return true, якщо жанр існує
+     */
+    boolean existsByName(String name);
 }

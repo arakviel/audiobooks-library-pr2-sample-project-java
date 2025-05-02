@@ -13,6 +13,7 @@ import org.springframework.context.annotation.Configuration;
 import java.util.List;
 
 /**
+ * TODO: delete database by rerun
  * Основний клас додатку для демонстрації вибірки авторів із бази даних.
  */
 public class Application {

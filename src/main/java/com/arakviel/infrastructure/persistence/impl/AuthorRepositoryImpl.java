@@ -6,6 +6,7 @@ import com.arakviel.infrastructure.persistence.GenericRepository;
 import com.arakviel.infrastructure.persistence.contract.AuthorRepository;
 import com.arakviel.infrastructure.persistence.exception.DatabaseAccessException;
 import com.arakviel.infrastructure.persistence.util.ConnectionPool;
+import org.springframework.stereotype.Repository;
 
 import java.sql.ResultSet;
 import java.util.List;
@@ -14,6 +15,7 @@ import java.util.UUID;
 /**
  * Реалізація репозиторію для специфічних операцій з авторами.
  */
+@Repository
 public class AuthorRepositoryImpl extends GenericRepository<Author, UUID> implements AuthorRepository {
 
     /**
@@ -55,6 +57,39 @@ public class AuthorRepositoryImpl extends GenericRepository<Author, UUID> implem
     public List<Audiobook> findAudiobooksByAuthorId(UUID authorId) {
         String baseSql = "SELECT * FROM audiobooks WHERE author_id = ?";
         return executeQuery(baseSql, stmt -> stmt.setObject(1, authorId), this::mapResultSetToAudiobook);
+    }
+
+    /**
+     * Пошук авторів за частковою відповідністю імені або прізвища.
+     *
+     * @param partialName часткове ім’я або прізвище
+     * @return список авторів
+     */
+    @Override
+    public List<Author> findByPartialName(String partialName) {
+        return findAll(
+                (whereClause, params) -> {
+                    whereClause.add("(first_name ILIKE ? OR last_name ILIKE ?)");
+                    params.add("%" + partialName + "%");
+                    params.add("%" + partialName + "%");
+                },
+                null, true, 0, Integer.MAX_VALUE
+        );
+    }
+
+    /**
+     * Підрахунок аудіокниг для автора.
+     *
+     * @param authorId ідентифікатор автора
+     * @return кількість аудіокниг
+     */
+    @Override
+    public long countAudiobooksByAuthorId(UUID authorId) {
+        Filter filter = (whereClause, params) -> {
+            whereClause.add("author_id = ?");
+            params.add(authorId);
+        };
+        return count(filter, "audiobooks");
     }
 
     /**

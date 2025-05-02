@@ -115,6 +115,7 @@ public interface Repository<T, ID> {
     long count();
 
     /**
+     * TODO: use groupBy somewhere
      * Групування сутностей за агрегаційною функцією.
      *
      * @param aggregation  агрегаційна функція
@@ -170,4 +171,12 @@ public interface Repository<T, ID> {
      * @param ids список ідентифікаторів
      */
     void deleteAll(List<ID> ids);
+
+    /**
+     * Витягнення ідентифікатора з сутності через рефлексію.
+     *
+     * @param entity сутність
+     * @return ідентифікатор
+     */
+    public Object extractId(Object entity);
 }

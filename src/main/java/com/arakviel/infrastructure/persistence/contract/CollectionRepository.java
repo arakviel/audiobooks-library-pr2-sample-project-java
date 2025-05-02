@@ -28,7 +28,13 @@ public interface CollectionRepository extends Repository<Collection, UUID> {
      */
     List<Audiobook> findAudiobooksByCollectionId(UUID collectionId);
 
-    // TODO: мені треба List<Collection> по UUID audiobookId, а не findAudiobooksByCollectionId.
+    /**
+     * Пошук колекцій за ідентифікатором аудіокниги.
+     *
+     * @param audiobookId ідентифікатор аудіокниги
+     * @return список колекцій
+     */
+    List<Collection> findByAudiobookId(UUID audiobookId);
 
     /**
      * Прикріплення аудіокниги до колекції.
@@ -38,5 +44,34 @@ public interface CollectionRepository extends Repository<Collection, UUID> {
      */
     void attachAudiobookToCollection(UUID collectionId, UUID audiobookId);
 
-    // TODO: мені треба detachAudiobookFromCollection.
+    /**
+     * Від'єднання аудіокниги від колекції.
+     *
+     * @param collectionId ідентифікатор колекції
+     * @param audiobookId  ідентифікатор аудіокниги
+     */
+    void detachAudiobookFromCollection(UUID collectionId, UUID audiobookId);
+
+    /**
+     * Підрахунок аудіокниг у колекції.
+     *
+     * @param collectionId ідентифікатор колекції
+     * @return кількість аудіокниг
+     */
+    long countAudiobooksByCollectionId(UUID collectionId);
+
+    /**
+     * Пошук колекцій за назвою.
+     *
+     * @param name назва колекції
+     * @return список колекцій
+     */
+    List<Collection> findByName(String name);
+
+    /**
+     * Видалення всіх аудіокниг із колекції.
+     *
+     * @param collectionId ідентифікатор колекції
+     */
+    void clearCollection(UUID collectionId);
 }

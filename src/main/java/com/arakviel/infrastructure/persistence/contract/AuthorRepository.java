@@ -28,4 +28,20 @@ public interface AuthorRepository extends Repository<Author, UUID> {
      * @return список аудіокниг
      */
     List<Audiobook> findAudiobooksByAuthorId(UUID authorId);
+
+    /**
+     * Пошук авторів за частковою відповідністю імені або прізвища.
+     *
+     * @param partialName часткове ім’я або прізвище
+     * @return список авторів
+     */
+    List<Author> findByPartialName(String partialName);
+
+    /**
+     * Підрахунок аудіокниг для автора.
+     *
+     * @param authorId ідентифікатор автора
+     * @return кількість аудіокниг
+     */
+    long countAudiobooksByAuthorId(UUID authorId);
 }

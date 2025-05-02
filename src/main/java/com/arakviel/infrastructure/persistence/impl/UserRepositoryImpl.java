@@ -7,6 +7,7 @@ import com.arakviel.infrastructure.persistence.GenericRepository;
 import com.arakviel.infrastructure.persistence.contract.UserRepository;
 import com.arakviel.infrastructure.persistence.exception.DatabaseAccessException;
 import com.arakviel.infrastructure.persistence.util.ConnectionPool;
+import org.springframework.stereotype.Repository;
 
 import java.sql.ResultSet;
 import java.sql.Timestamp;
@@ -16,6 +17,7 @@ import java.util.UUID;
 /**
  * Реалізація репозиторію для специфічних операцій з користувачами.
  */
+@Repository
 public class UserRepositoryImpl extends GenericRepository<User, UUID> implements UserRepository {
 
     /**
@@ -71,6 +73,83 @@ public class UserRepositoryImpl extends GenericRepository<User, UUID> implements
     public List<ListeningProgress> findListeningProgressByUserId(UUID userId) {
         String baseSql = "SELECT * FROM listening_progresses WHERE user_id = ?";
         return executeQuery(baseSql, stmt -> stmt.setObject(1, userId), this::mapResultSetToListeningProgress);
+    }
+
+    /**
+     * Пошук користувачів за частковою відповідністю імені.
+     *
+     * @param partialUsername часткове ім’я користувача
+     * @return список користувачів
+     */
+    @Override
+    public List<User> findByPartialUsername(String partialUsername) {
+        return findAll(
+                (whereClause, params) -> {
+                    whereClause.add("username ILIKE ?");
+                    params.add("%" + partialUsername + "%");
+                },
+                null, true, 0, Integer.MAX_VALUE
+        );
+    }
+
+    /**
+     * Підрахунок колекцій користувача.
+     *
+     * @param userId ідентифікатор користувача
+     * @return кількість колекцій
+     */
+    @Override
+    public long countCollectionsByUserId(UUID userId) {
+        Filter filter = (whereClause, params) -> {
+            whereClause.add("user_id = ?");
+            params.add(userId);
+        };
+        return count(filter, "collections");
+    }
+
+    /**
+     * Підрахунок записів прогресу прослуховування.
+     *
+     * @param userId ідентифікатор користувача
+     * @return кількість записів прогресу
+     */
+    @Override
+    public long countListeningProgressByUserId(UUID userId) {
+        Filter filter = (whereClause, params) -> {
+            whereClause.add("user_id = ?");
+            params.add(userId);
+        };
+        return count(filter, "listening_progresses");
+    }
+
+    /**
+     * Перевірка існування користувача за ім’ям.
+     *
+     * @param username ім’я користувача
+     * @return true, якщо користувач існує
+     */
+    @Override
+    public boolean existsByUsername(String username) {
+        Filter filter = (whereClause, params) -> {
+            whereClause.add("username = ?");
+            params.add(username);
+        };
+        return count(filter) > 0;
+    }
+
+    /**
+     * Перевірка існування користувача за електронною поштою.
+     *
+     * @param email електронна пошта
+     * @return true, якщо користувач існує
+     */
+    @Override
+    public boolean existsByEmail(String email) {
+        Filter filter = (whereClause, params) -> {
+            whereClause.add("email = ?");
+            params.add(email);
+        };
+        return count(filter) > 0;
     }
 
     /**

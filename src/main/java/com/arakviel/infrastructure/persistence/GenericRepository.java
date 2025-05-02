@@ -144,6 +144,17 @@ public abstract class GenericRepository<T, ID> implements Repository<T, ID> {
      */
     @Override
     public long count(Filter filter) {
+        return count(filter, tableName);
+    }
+
+    /**
+     * Перевантажений метод count для роботи з іншою таблицею.
+     *
+     * @param filter    фільтр для вибірки
+     * @param tableName назва таблиці
+     * @return кількість записів
+     */
+    protected long count(Filter filter, String tableName) {
         StringJoiner sql = new StringJoiner(" ");
         sql.add(String.format("SELECT COUNT(*) FROM %s", tableName));
         List<Object> parameters = new ArrayList<>();
@@ -161,7 +172,7 @@ public abstract class GenericRepository<T, ID> implements Repository<T, ID> {
                 return resultSet.next() ? resultSet.getLong(1) : 0;
             }
         } catch (SQLException e) {
-            throw new DatabaseAccessException("Помилка підрахунку записів", e);
+            throw new DatabaseAccessException("Помилка підрахунку записів у таблиці " + tableName, e);
         }
     }
 
@@ -563,6 +574,22 @@ public abstract class GenericRepository<T, ID> implements Repository<T, ID> {
             }
         }
         return result.toString();
+    }
+
+    /**
+     * Витягнення ідентифікатора з сутності через рефлексію.
+     *
+     * @param entity сутність
+     * @return ідентифікатор
+     */
+    public Object extractId(Object entity) {
+        try {
+            var idField = entity.getClass().getDeclaredField("id");
+            idField.setAccessible(true);
+            return idField.get(entity);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new IllegalStateException("Не вдалося отримати ідентифікатор для " + entity.getClass().getSimpleName(), e);
+        }
     }
 
     /**

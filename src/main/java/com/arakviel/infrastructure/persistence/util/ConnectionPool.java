@@ -14,7 +14,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Використовує Proxy для перевизначення close, повертаючи з'єднання в пул.
  */
 public class ConnectionPool {
-    private static volatile ConnectionPool instance;
     private final BlockingQueue<Connection> availableConnections;
     private final String url;
     private final String user;
@@ -23,7 +22,7 @@ public class ConnectionPool {
     private final boolean autoCommit;
     private final AtomicBoolean isInitialized = new AtomicBoolean(false);
 
-    private ConnectionPool(PoolConfig config) {
+    public ConnectionPool(PoolConfig config) {
         this.url = config.url;
         this.user = config.user;
         this.password = config.password;
@@ -31,17 +30,6 @@ public class ConnectionPool {
         this.autoCommit = config.autoCommit;
         this.availableConnections = new ArrayBlockingQueue<>(maxConnections);
         initializePool();
-    }
-
-    public static ConnectionPool getInstance(PoolConfig config) {
-        if (instance == null) {
-            synchronized (ConnectionPool.class) {
-                if (instance == null) {
-                    instance = new ConnectionPool(config);
-                }
-            }
-        }
-        return instance;
     }
 
     private void initializePool() {
@@ -95,7 +83,6 @@ public class ConnectionPool {
             }
             availableConnections.clear();
             isInitialized.set(false);
-            instance = null;
         } catch (SQLException e) {
             throw new RuntimeException("Помилка закриття пулу з'єднань", e);
         }
