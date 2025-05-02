@@ -34,11 +34,28 @@ public class PersistenceInitializer {
      * Ініціалізація бази даних: виконання DDL та DML скриптів.
      */
     public void init() {
+        init(true);
+    }
+
+    /**
+     * Ініціалізація бази даних: виконання DDL та DML скриптів.
+     */
+    public void init(boolean isRunDml) {
         try (Connection connection = connectionPool.getConnection();
              Statement statement = connection.createStatement()) {
             connection.setAutoCommit(false);
+
+            // Спочатку видаляємо всі таблиці, якщо вони існують
+            try {
+                statement.execute("DROP ALL OBJECTS");
+            } catch (SQLException e) {
+                // Ігноруємо помилку, якщо таблиць немає
+            }
+
+            // Створюємо таблиці та заповнюємо їх даними
             statement.execute(getSQL(DDL_SCRIPT_PATH));
-            statement.execute(getSQL(DML_SCRIPT_PATH));
+            if (isRunDml)
+                statement.execute(getSQL(DML_SCRIPT_PATH));
             connection.commit();
         } catch (SQLException e) {
             throw new DatabaseAccessException("Помилка ініціалізації бази даних", e);

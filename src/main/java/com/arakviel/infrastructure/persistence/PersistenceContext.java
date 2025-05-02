@@ -158,7 +158,6 @@ public class PersistenceContext {
             throw new DatabaseAccessException("Помилка виконання транзакції", e);
         } finally {
             clear();
-            closeConnection();
         }
     }
 
@@ -180,19 +179,6 @@ public class PersistenceContext {
             this.connection.setAutoCommit(false); // Вимикаємо автокоміт для транзакцій
         } catch (SQLException e) {
             throw new DatabaseAccessException("Помилка ініціалізації з'єднання", e);
-        }
-    }
-
-    /**
-     * Закриття з'єднання (повернення в пул).
-     */
-    private void closeConnection() {
-        try {
-            if (connection != null && !connection.isClosed()) {
-                connection.close(); // Повертає в пул завдяки Proxy
-            }
-        } catch (SQLException e) {
-            throw new DatabaseAccessException("Помилка закриття з'єднання", e);
         }
     }
 

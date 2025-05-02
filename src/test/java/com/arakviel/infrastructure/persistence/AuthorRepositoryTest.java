@@ -5,9 +5,11 @@ import com.arakviel.infrastructure.InfrastructureConfig;
 import com.arakviel.infrastructure.persistence.contract.AuthorRepository;
 import com.arakviel.infrastructure.persistence.util.ConnectionPool;
 import com.arakviel.infrastructure.persistence.util.PersistenceInitializer;
-import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
@@ -17,6 +19,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringJUnitConfig(classes = {InfrastructureConfig.class})
+@TestInstance(Lifecycle.PER_CLASS)
 class AuthorRepositoryTest {
 
     @Autowired
@@ -33,13 +36,11 @@ class AuthorRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        // Ініціалізація бази даних перед кожним тестом
-        persistenceInitializer.init();
+        persistenceInitializer.init(false);
     }
 
-    @AfterEach
-    void tearDown() {
-        // Закриття пулу з'єднань після кожного тесту
+    @AfterAll
+    void closeResources() {
         connectionPool.shutdown();
     }
 
