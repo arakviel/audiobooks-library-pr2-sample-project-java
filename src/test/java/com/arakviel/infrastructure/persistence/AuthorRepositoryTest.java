@@ -22,17 +22,21 @@ import static org.assertj.core.api.Assertions.assertThat;
 @TestInstance(Lifecycle.PER_CLASS)
 class AuthorRepositoryTest {
 
-    @Autowired
-    private AuthorRepository authorRepository;
+    private final AuthorRepository authorRepository;
+    private final PersistenceInitializer persistenceInitializer;
+    private final ConnectionPool connectionPool;
+    private final PersistenceContext persistenceContext;
 
     @Autowired
-    private PersistenceInitializer persistenceInitializer;
-
-    @Autowired
-    private ConnectionPool connectionPool;
-
-    @Autowired
-    private PersistenceContext persistenceContext;
+    public AuthorRepositoryTest(AuthorRepository authorRepository,
+                                PersistenceInitializer persistenceInitializer,
+                                ConnectionPool connectionPool,
+                                PersistenceContext persistenceContext) {
+        this.authorRepository = authorRepository;
+        this.persistenceInitializer = persistenceInitializer;
+        this.connectionPool = connectionPool;
+        this.persistenceContext = persistenceContext;
+    }
 
     @BeforeEach
     void setUp() {
@@ -45,7 +49,7 @@ class AuthorRepositoryTest {
     }
 
     @Test
-    void testSaveAndFindAuthor() {
+    void shouldSaveAndRetrieveAuthorByNameWhenPersisted() {
         // Arrange
         Author author = new Author(UUID.randomUUID(), "John", "Doe", "Bio", null);
         persistenceContext.registerNew(author);
@@ -62,7 +66,7 @@ class AuthorRepositoryTest {
     }
 
     @Test
-    void testUpdateAuthor() {
+    void shouldUpdateAuthorFirstNameWhenModifiedAndPersisted() {
         // Arrange
         Author author = new Author(UUID.randomUUID(), "Jane", "Smith", "Bio", null);
         persistenceContext.registerNew(author);
