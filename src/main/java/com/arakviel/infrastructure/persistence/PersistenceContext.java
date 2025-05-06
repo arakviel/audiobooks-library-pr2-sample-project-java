@@ -49,7 +49,6 @@ public class PersistenceContext {
                               ListeningProgressRepository listeningProgressRepository,
                               UserRepository userRepository) {
         this.connectionPool = connectionPool;
-
         this.audiobookRepository = audiobookRepository;
         this.audiobookFileRepository = audiobookFileRepository;
         this.authorRepository = authorRepository;
@@ -131,6 +130,7 @@ public class PersistenceContext {
             // Збереження нових сутностей
             for (Object entity : newEntities) {
                 Repository<Object, Object> repository = getRepository(entity.getClass());
+                System.out.println("Saving entity: " + entity); // Логування
                 repository.save(entity);
             }
 
@@ -158,6 +158,11 @@ public class PersistenceContext {
             throw new DatabaseAccessException("Помилка виконання транзакції", e);
         } finally {
             clear();
+            try {
+                connection.close(); // Закриваємо з'єднання для повернення в пул
+            } catch (SQLException e) {
+                throw new DatabaseAccessException("Помилка закриття з'єднання", e);
+            }
         }
     }
 
@@ -175,6 +180,9 @@ public class PersistenceContext {
      */
     private void initializeConnection() {
         try {
+            if (connection != null && !connection.isClosed()) {
+                connection.close(); // Закриваємо старе з'єднання
+            }
             this.connection = connectionPool.getConnection();
             this.connection.setAutoCommit(false); // Вимикаємо автокоміт для транзакцій
         } catch (SQLException e) {

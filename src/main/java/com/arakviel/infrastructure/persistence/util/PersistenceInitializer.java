@@ -19,6 +19,7 @@ public class PersistenceInitializer {
 
     private static final String DDL_SCRIPT_PATH = "db/ddl_h2.sql";
     private static final String DML_SCRIPT_PATH = "db/dml_h2.sql";
+    private static final String CLEAR_SCRIPT_PATH = "db/ddl_clear_data_h2.sql";
     private final ConnectionPool connectionPool;
 
     /**
@@ -45,13 +46,6 @@ public class PersistenceInitializer {
              Statement statement = connection.createStatement()) {
             connection.setAutoCommit(false);
 
-            // Спочатку видаляємо всі таблиці, якщо вони існують
-            try {
-                statement.execute("DROP ALL OBJECTS");
-            } catch (SQLException e) {
-                // Ігноруємо помилку, якщо таблиць немає
-            }
-
             // Створюємо таблиці та заповнюємо їх даними
             statement.execute(getSQL(DDL_SCRIPT_PATH));
             if (isRunDml)
@@ -59,6 +53,21 @@ public class PersistenceInitializer {
             connection.commit();
         } catch (SQLException e) {
             throw new DatabaseAccessException("Помилка ініціалізації бази даних", e);
+        }
+    }
+
+    /**
+     * Очищення всіх даних у базі без видалення структури.
+     */
+    public void clearData() {
+        try (Connection connection = connectionPool.getConnection();
+             Statement statement = connection.createStatement()) {
+            connection.setAutoCommit(false);
+
+            statement.execute(getSQL(CLEAR_SCRIPT_PATH));
+            connection.commit();
+        } catch (SQLException e) {
+            throw new DatabaseAccessException("Помилка очищення даних у базі", e);
         }
     }
 
