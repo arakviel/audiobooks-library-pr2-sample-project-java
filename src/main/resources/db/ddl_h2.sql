@@ -13,11 +13,11 @@ CREATE TABLE IF NOT EXISTS authors (
 -- 3NF
 CREATE TABLE IF NOT EXISTS genres (
     PRIMARY KEY(id),
-    id          UUID,
-    name        VARCHAR(64) NOT NULL,
-                CONSTRAINT genres_name_key
-                    UNIQUE (name),
-    description TEXT
+    id               UUID,
+    name             VARCHAR(128) NOT NULL UNIQUE,
+                     CONSTRAINT genres_name_not_empty_check
+                          CHECK (length(trim(name)) > 0),
+    description      VARCHAR(512)
 );
 
 -- 3NF

@@ -52,6 +52,11 @@ public class ConnectionPool {
                 new Class[]{Connection.class},
                 (proxy, method, args) -> {
                     if ("close".equals(method.getName())) {
+                        try {
+                            connection.setAutoCommit(autoCommit);
+                        } catch (SQLException e) {
+                            throw new RuntimeException("Не вдалось встановити autoCommit", e);
+                        }
                         availableConnections.offer((Connection) proxy);
                         return null;
                     }
@@ -63,7 +68,9 @@ public class ConnectionPool {
         try {
             Connection connection = availableConnections.take();
             if (connection.isClosed()) {
-                connection = createProxyConnection();
+                Connection newConnection = createProxyConnection();
+                availableConnections.offer(newConnection);
+                return newConnection;
             }
             return connection;
         } catch (InterruptedException e) {

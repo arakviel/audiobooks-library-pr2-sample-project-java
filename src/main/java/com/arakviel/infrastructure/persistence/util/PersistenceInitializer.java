@@ -46,10 +46,14 @@ public class PersistenceInitializer {
              Statement statement = connection.createStatement()) {
             connection.setAutoCommit(false);
 
-            // Створюємо таблиці та заповнюємо їх даними
+            // Очищаємо дані та ініціалізуємо в одній транзакції
+            if (Boolean.parseBoolean(System.getProperty("db.init.clean", "false"))) {
+                statement.execute(getSQL(CLEAR_SCRIPT_PATH));
+            }
             statement.execute(getSQL(DDL_SCRIPT_PATH));
-            if (isRunDml)
+            if (isRunDml) {
                 statement.execute(getSQL(DML_SCRIPT_PATH));
+            }
             connection.commit();
         } catch (SQLException e) {
             throw new DatabaseAccessException("Помилка ініціалізації бази даних", e);
