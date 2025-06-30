@@ -535,7 +535,7 @@ public abstract class GenericRepository<T, ID> implements Repository<T, ID> {
                     value instanceof Number ? ((Number) value).intValue() : Integer.parseInt(value.toString());
             case "java.time.LocalDateTime" -> value instanceof Timestamp ? ((Timestamp) value).toLocalDateTime() : null;
             case "com.arakviel.domain.enums.FileFormat" ->
-                    value instanceof String ? FileFormat.valueOf((String) value) : value;
+                    value instanceof String ? FileFormat.valueOf(((String) value).toUpperCase()) : value;
             default -> value;
         };
     }

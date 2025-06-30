@@ -8,6 +8,7 @@ import com.arakviel.infrastructure.persistence.contract.AuthorRepository;
 import com.arakviel.infrastructure.persistence.util.ConnectionPool;
 import com.arakviel.infrastructure.persistence.util.PersistenceInitializer;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -44,8 +45,15 @@ class AuthorRepositoryTest {
 
     @BeforeEach
     void setUp() {
+        persistenceContext.clearAndClose(); // Clear context
         persistenceInitializer.init(false); // Initialize without DML
         persistenceInitializer.clearData(); // Clear all data for isolation
+        persistenceContext.activate(); // Activate context for this test
+    }
+
+    @AfterEach
+    void tearDown() {
+        persistenceContext.clearAndClose(); // Clear context after each test
     }
 
     @AfterAll
@@ -53,37 +61,32 @@ class AuthorRepositoryTest {
         connectionPool.shutdown();
     }
 
-/*    @AfterAll
-    void closeResources() {
-        connectionPool.shutdown();
-    }*/
-
     @Test
     void shouldSaveAndRetrieveAuthorByNameWhenPersisted() {
         // Arrange
-        Author author = new Author(UUID.randomUUID(), "John", "Doe", "Bio", null);
+        Author author = new Author(UUID.randomUUID(), "Isaac", "Asimov", "Science fiction writer", "/avatars/asimov.jpg");
         persistenceContext.registerNew(author);
 
         // Act
         persistenceContext.commit();
-        List<Author> authors = authorRepository.findByName("John", "Doe");
+        List<Author> authors = authorRepository.findByName("Isaac", "Asimov");
 
         // Assert
         assertThat(authors).hasSize(1);
         assertThat(authors.getFirst())
                 .extracting(Author::getFirstName, Author::getLastName)
-                .containsExactly("John", "Doe");
+                .containsExactly("Isaac", "Asimov");
     }
 
     @Test
-    void shouldUpdateAuthorFirstNameWhenModifiedAndPersisted() {
+    void shouldUpdateAuthorBiographyWhenModifiedAndPersisted() {
         // Arrange
-        Author author = new Author(UUID.randomUUID(), "Jane", "Smith", "Bio", null);
+        Author author = new Author(UUID.randomUUID(), "Frank", "Herbert", "Old biography", null);
         persistenceContext.registerNew(author);
         persistenceContext.commit();
 
         // Act
-        author.setFirstName("Janet");
+        author.setBio("Science fiction author, best known for Dune");
         persistenceContext.registerUpdated(author.getId(), author);
         persistenceContext.commit();
 
@@ -91,7 +94,42 @@ class AuthorRepositoryTest {
 
         // Assert
         assertThat(updatedAuthor).isNotNull();
-        assertThat(updatedAuthor.getFirstName()).isEqualTo("Janet");
+        assertThat(updatedAuthor.getBio()).isEqualTo("Science fiction author, best known for Dune");
+    }
+
+    @Test
+    void shouldFindAuthorsByLastNameWhenAuthorsExist() {
+        // Arrange
+        Author author1 = new Author(UUID.randomUUID(), "Agatha", "Christie", "Mystery writer", null);
+        Author author2 = new Author(UUID.randomUUID(), "Arthur", "Christie", "Another Christie", null);
+        Author author3 = new Author(UUID.randomUUID(), "George", "Orwell", "Dystopian fiction writer", null);
+        persistenceContext.registerNew(author1);
+        persistenceContext.registerNew(author2);
+        persistenceContext.registerNew(author3);
+        persistenceContext.commit();
+
+        // Act
+        List<Author> christieAuthors = authorRepository.findByPartialName("Christie");
+
+        // Assert
+        assertThat(christieAuthors).hasSize(2);
+        assertThat(christieAuthors)
+                .extracting(Author::getFirstName)
+                .containsExactlyInAnyOrder("Agatha", "Arthur");
+    }
+
+    @Test
+    void shouldReturnEmptyListWhenNoAuthorsMatchLastName() {
+        // Arrange
+        Author author = new Author(UUID.randomUUID(), "Ray", "Bradbury", "Science fiction writer", null);
+        persistenceContext.registerNew(author);
+        persistenceContext.commit();
+
+        // Act
+        List<Author> authors = authorRepository.findByPartialName("Tolkien");
+
+        // Assert
+        assertThat(authors).isEmpty();
     }
 
     @Test
@@ -99,12 +137,12 @@ class AuthorRepositoryTest {
         // Arrange
         UUID authorId = UUID.randomUUID();
         UUID genreId = UUID.randomUUID();
-        Author author = new Author(authorId, "Taras", "Shevchenko", "Ukrainian poet", null);
-        Genre genre = new Genre(genreId, "Poetry", null);
+        Author author = new Author(authorId, "J.R.R.", "Tolkien", "Fantasy writer", null);
+        Genre genre = new Genre(genreId, "Fantasy", "Epic fantasy stories");
         Audiobook audiobook1 = new Audiobook(
-                UUID.randomUUID(), authorId, genreId, "Kobzar", 3600, 2023, "Poetry collection", null);
+                UUID.randomUUID(), authorId, genreId, "The Hobbit", 36000, 1937, "Adventure in Middle-earth", null);
         Audiobook audiobook2 = new Audiobook(
-                UUID.randomUUID(), authorId, genreId, "Haydamaky", 5400, 2022, "Epic poem", null);
+                UUID.randomUUID(), authorId, genreId, "The Lord of the Rings", 54000, 1954, "Epic fantasy trilogy", null);
         persistenceContext.registerNew(author);
         persistenceContext.registerNew(genre);
         persistenceContext.registerNew(audiobook1);
@@ -118,14 +156,14 @@ class AuthorRepositoryTest {
         assertThat(audiobooks).hasSize(2);
         assertThat(audiobooks)
                 .extracting(Audiobook::getTitle)
-                .containsExactlyInAnyOrder("Kobzar", "Haydamaky");
+                .containsExactlyInAnyOrder("The Hobbit", "The Lord of the Rings");
     }
 
     @Test
     void shouldReturnEmptyListWhenNoAudiobooksForAuthorId() {
         // Arrange
         UUID authorId = UUID.randomUUID();
-        Author author = new Author(authorId, "No", "Books", "No audiobooks", null);
+        Author author = new Author(authorId, "No", "Books", "Author without books", null);
         persistenceContext.registerNew(author);
         persistenceContext.commit();
 
@@ -139,36 +177,22 @@ class AuthorRepositoryTest {
     @Test
     void shouldFindAuthorsByPartialNameWhenMatchesExist() {
         // Arrange
-        Author author1 = new Author(UUID.randomUUID(), "Olena", "Shevchenko", "Bio", null);
-        Author author2 = new Author(UUID.randomUUID(), "Taras", "Shevchenko", "Bio", null);
-        Author author3 = new Author(UUID.randomUUID(), "Ivan", "Franko", "Bio", null);
+        Author author1 = new Author(UUID.randomUUID(), "Stephen", "King", "Horror writer", null);
+        Author author2 = new Author(UUID.randomUUID(), "Stephen", "Hawking", "Physicist", null);
+        Author author3 = new Author(UUID.randomUUID(), "Michael", "Crichton", "Thriller writer", null);
         persistenceContext.registerNew(author1);
         persistenceContext.registerNew(author2);
         persistenceContext.registerNew(author3);
         persistenceContext.commit();
 
         // Act
-        List<Author> authors = authorRepository.findByPartialName("Shev");
+        List<Author> stephens = authorRepository.findByPartialName("Stephen");
 
         // Assert
-        assertThat(authors).hasSize(2);
-        assertThat(authors)
+        assertThat(stephens).hasSize(2);
+        assertThat(stephens)
                 .extracting(Author::getLastName)
-                .containsExactlyInAnyOrder("Shevchenko", "Shevchenko");
-    }
-
-    @Test
-    void shouldReturnEmptyListWhenNoAuthorsMatchPartialName() {
-        // Arrange
-        Author author = new Author(UUID.randomUUID(), "Olena", "Shevchenko", "Bio", null);
-        persistenceContext.registerNew(author);
-        persistenceContext.commit();
-
-        // Act
-        List<Author> authors = authorRepository.findByPartialName("NonExistent");
-
-        // Assert
-        assertThat(authors).isEmpty();
+                .containsExactlyInAnyOrder("King", "Hawking");
     }
 
     @Test
@@ -176,30 +200,33 @@ class AuthorRepositoryTest {
         // Arrange
         UUID authorId = UUID.randomUUID();
         UUID genreId = UUID.randomUUID();
-        Author author = new Author(authorId, "Lesya", "Ukrainka", "Ukrainian writer", null);
-        Genre genre = new Genre(genreId, "Drama", null);
+        Author author = new Author(authorId, "Jules", "Verne", "Adventure writer", null);
+        Genre genre = new Genre(genreId, "Adventure", "Exploration stories");
         Audiobook audiobook1 = new Audiobook(
-                UUID.randomUUID(), authorId, genreId, "Lisova Pisnya", 7200, 2021, "Drama", null);
+                UUID.randomUUID(), authorId, genreId, "Twenty Thousand Leagues Under the Sea", 16200, 1920, "Submarine adventure", null);
         Audiobook audiobook2 = new Audiobook(
-                UUID.randomUUID(), authorId, genreId, "Boyarynya", 4800, 2020, "Historical drama", null);
+                UUID.randomUUID(), authorId, genreId, "Around the World in Eighty Days", 12600, 1921, "Global journey", null);
+        Audiobook audiobook3 = new Audiobook(
+                UUID.randomUUID(), authorId, genreId, "Journey to the Center of the Earth", 14400, 1922, "Underground adventure", null);
         persistenceContext.registerNew(author);
         persistenceContext.registerNew(genre);
         persistenceContext.registerNew(audiobook1);
         persistenceContext.registerNew(audiobook2);
+        persistenceContext.registerNew(audiobook3);
         persistenceContext.commit();
 
         // Act
         long count = authorRepository.countAudiobooksByAuthorId(authorId);
 
         // Assert
-        assertThat(count).isEqualTo(2);
+        assertThat(count).isEqualTo(3);
     }
 
     @Test
     void shouldReturnZeroWhenNoAudiobooksForAuthorId() {
         // Arrange
         UUID authorId = UUID.randomUUID();
-        Author author = new Author(authorId, "No", "Books", "No audiobooks", null);
+        Author author = new Author(authorId, "Empty", "Author", "No audiobooks", null);
         persistenceContext.registerNew(author);
         persistenceContext.commit();
 
@@ -211,10 +238,35 @@ class AuthorRepositoryTest {
     }
 
     @Test
+    void shouldCheckExistsByNameWhenAuthorExists() {
+        // Arrange
+        Author author = new Author(UUID.randomUUID(), "Existing", "Author", "This author exists", null);
+        persistenceContext.registerNew(author);
+        persistenceContext.commit();
+
+        // Act
+        List<Author> authors = authorRepository.findByName("Existing", "Author");
+        boolean exists = !authors.isEmpty();
+
+        // Assert
+        assertThat(exists).isTrue();
+    }
+
+    @Test
+    void shouldReturnFalseWhenAuthorDoesNotExistByName() {
+        // Act
+        List<Author> authors = authorRepository.findByName("Non", "Existing");
+        boolean exists = !authors.isEmpty();
+
+        // Assert
+        assertThat(exists).isFalse();
+    }
+
+    @Test
     void shouldDeleteAuthorAndVerifyAbsence() {
         // Arrange
         UUID authorId = UUID.randomUUID();
-        Author author = new Author(authorId, "Mykhailo", "Kotsiubynsky", "Bio", null);
+        Author author = new Author(authorId, "Delete", "Me", "This author will be deleted", null);
         persistenceContext.registerNew(author);
         persistenceContext.commit();
 
@@ -231,8 +283,8 @@ class AuthorRepositoryTest {
     @Test
     void shouldSaveMultipleAuthorsAndRetrieveAll() {
         // Arrange
-        Author author1 = new Author(UUID.randomUUID(), "Vasyl", "Stefanyk", "Bio", null);
-        Author author2 = new Author(UUID.randomUUID(), "Olha", "Kobylyanska", "Bio", null);
+        Author author1 = new Author(UUID.randomUUID(), "Author", "One", "First author", null);
+        Author author2 = new Author(UUID.randomUUID(), "Author", "Two", "Second author", null);
         persistenceContext.registerNew(author1);
         persistenceContext.registerNew(author2);
         persistenceContext.commit();
@@ -243,7 +295,7 @@ class AuthorRepositoryTest {
         // Assert
         assertThat(authors).hasSize(2);
         assertThat(authors)
-                .extracting(Author::getFirstName)
-                .containsExactlyInAnyOrder("Vasyl", "Olha");
+                .extracting(Author::getLastName)
+                .containsExactlyInAnyOrder("One", "Two");
     }
 }

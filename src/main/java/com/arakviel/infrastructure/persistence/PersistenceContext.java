@@ -4,7 +4,8 @@ import com.arakviel.domain.entities.*;
 import com.arakviel.infrastructure.persistence.contract.*;
 import com.arakviel.infrastructure.persistence.exception.DatabaseAccessException;
 import com.arakviel.infrastructure.persistence.util.ConnectionPool;
-import jakarta.annotation.PostConstruct;
+
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import java.sql.Connection;
@@ -17,9 +18,15 @@ import java.util.Map;
 /**
  * Реалізація патерну Unit of Work для управління транзакціями та змінами сутностей.
  * Відстежує створені, оновлені та видалені сутності, застосовуючи зміни в одній транзакції.
+ *
+ * Нова архітектура:
+ * - З'єднання створюється тільки під час commit()
+ * - Автоматичне закриття з'єднань через try-with-resources
+ * - Thread-safe операції
+ * - Proper lifecycle management
  */
 @Component
-public class PersistenceContext {
+public class PersistenceContext implements AutoCloseable {
 
     private final ConnectionPool connectionPool;
     private final AudiobookRepository audiobookRepository;
@@ -29,11 +36,15 @@ public class PersistenceContext {
     private final CollectionRepository collectionRepository;
     private final ListeningProgressRepository listeningProgressRepository;
     private final UserRepository userRepository;
-    private Connection connection;
+
+    // Видаляємо connection як поле класу - тепер воно створюється тільки під час commit
     private final Map<Class<?>, Repository<?, ?>> repositories;
     private final List<Object> newEntities;
     private final Map<Object, Object> updatedEntities; // Map<Id, Entity>
     private final List<Object> deletedEntities;
+
+    // Додаємо флаг для відстеження стану
+    private volatile boolean isActive = true;
 
     /**
      * Конструктор для створення контексту з пулом з'єднань.
@@ -61,11 +72,8 @@ public class PersistenceContext {
         this.newEntities = new ArrayList<>();
         this.updatedEntities = new HashMap<>();
         this.deletedEntities = new ArrayList<>();
-        initializeConnection();
-    }
 
-    @PostConstruct
-    private void init() {
+        // Ініціалізуємо репозиторії в конструкторі замість @PostConstruct
         this.registerRepository(Audiobook.class, audiobookRepository);
         this.registerRepository(AudiobookFile.class, audiobookFileRepository);
         this.registerRepository(Author.class, authorRepository);
@@ -124,45 +132,59 @@ public class PersistenceContext {
 
     /**
      * Застосування всіх зареєстрованих змін у транзакції.
+     * Нова архітектура: з'єднання створюється тільки під час commit() та автоматично закривається.
      */
     public void commit() {
-        try {
-            // Збереження нових сутностей
-            for (Object entity : newEntities) {
-                Repository<Object, Object> repository = getRepository(entity.getClass());
-                System.out.println("Saving entity: " + entity); // Логування
-                repository.save(entity);
-            }
+        if (!isActive) {
+            throw new IllegalStateException("PersistenceContext is not active");
+        }
 
-            // Оновлення сутностей
-            for (Map.Entry<Object, Object> entry : updatedEntities.entrySet()) {
-                Repository<Object, Object> repository = getRepository(entry.getValue().getClass());
-                repository.update(entry.getKey(), entry.getValue());
-            }
+        // Якщо немає змін, нічого не робимо
+        if (newEntities.isEmpty() && updatedEntities.isEmpty() && deletedEntities.isEmpty()) {
+            return;
+        }
 
-            // Видалення сутностей
-            for (Object entity : deletedEntities) {
-                Repository<Object, Object> repository = getRepository(entity.getClass());
-                Object id = repository.extractId(entity);
-                repository.delete(id);
-            }
+        // Використовуємо try-with-resources для автоматичного закриття з'єднання
+        try (Connection connection = connectionPool.getConnection()) {
+            connection.setAutoCommit(false); // Вимикаємо автокоміт для транзакції
 
-            // Коміт транзакції
-            connection.commit();
+            try {
+                // Збереження нових сутностей
+                for (Object entity : newEntities) {
+                    Repository<Object, Object> repository = getRepository(entity.getClass());
+                    System.out.println("Saving entity: " + entity); // Логування
+                    repository.save(entity);
+                }
+
+                // Оновлення сутностей
+                for (Map.Entry<Object, Object> entry : updatedEntities.entrySet()) {
+                    Repository<Object, Object> repository = getRepository(entry.getValue().getClass());
+                    repository.update(entry.getKey(), entry.getValue());
+                }
+
+                // Видалення сутностей
+                for (Object entity : deletedEntities) {
+                    Repository<Object, Object> repository = getRepository(entity.getClass());
+                    Object id = repository.extractId(entity);
+                    repository.delete(id);
+                }
+
+                // Коміт транзакції
+                connection.commit();
+
+            } catch (Exception e) {
+                try {
+                    connection.rollback();
+                } catch (SQLException rollbackEx) {
+                    e.addSuppressed(rollbackEx);
+                }
+                throw new DatabaseAccessException("Помилка виконання транзакції", e);
+            }
         } catch (SQLException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException rollbackEx) {
-                throw new DatabaseAccessException("Помилка відкатування транзакції", rollbackEx);
-            }
-            throw new DatabaseAccessException("Помилка виконання транзакції", e);
+            throw new DatabaseAccessException("Помилка отримання з'єднання", e);
         } finally {
+            // Очищуємо контекст після commit
             clear();
-            try {
-                connection.close(); // Закриваємо з'єднання для повернення в пул
-            } catch (SQLException e) {
-                throw new DatabaseAccessException("Помилка закриття з'єднання", e);
-            }
         }
     }
 
@@ -176,18 +198,45 @@ public class PersistenceContext {
     }
 
     /**
-     * Ініціалізація з'єднання з пулом.
+     * Публічний метод для очищення контексту.
+     * Використовується в тестах для забезпечення чистого стану.
      */
-    private void initializeConnection() {
-        try {
-            if (connection != null && !connection.isClosed()) {
-                connection.close(); // Закриваємо старе з'єднання
-            }
-            this.connection = connectionPool.getConnection();
-            this.connection.setAutoCommit(false); // Вимикаємо автокоміт для транзакцій
-        } catch (SQLException e) {
-            throw new DatabaseAccessException("Помилка ініціалізації з'єднання", e);
-        }
+    public void clearAndClose() {
+        clear();
+        // Більше не потрібно закривати з'єднання, оскільки воно не зберігається як поле
+    }
+
+    /**
+     * Ініціалізація нового з'єднання для тестів.
+     * Тепер це просто очищення контексту.
+     */
+    public void initNewConnection() {
+        clear();
+        // З'єднання створюється автоматично під час наступного commit()
+    }
+
+    /**
+     * Реалізація AutoCloseable для автоматичного закриття ресурсів.
+     */
+    @Override
+    public void close() {
+        isActive = false;
+        clear();
+        // З'єднання автоматично закриваються через try-with-resources в commit()
+    }
+
+    /**
+     * Перевірка, чи активний контекст.
+     */
+    public boolean isActive() {
+        return isActive;
+    }
+
+    /**
+     * Активація контексту (для повторного використання).
+     */
+    public void activate() {
+        isActive = true;
     }
 
     /**

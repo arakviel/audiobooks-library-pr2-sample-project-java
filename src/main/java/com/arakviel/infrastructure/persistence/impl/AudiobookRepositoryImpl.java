@@ -155,7 +155,7 @@ public class AudiobookRepositoryImpl extends GenericRepository<Audiobook, UUID> 
             file.setAudiobookId(rs.getObject("audiobook_id", UUID.class));
             file.setFilePath(rs.getString("file_path"));
             String format = rs.getString("format");
-            file.setFormat(format != null ? FileFormat.valueOf(format) : null);
+            file.setFormat(format != null ? FileFormat.valueOf(format.toUpperCase()) : null);
             file.setSize(rs.getInt("size"));
             return file;
         } catch (Exception e) {
