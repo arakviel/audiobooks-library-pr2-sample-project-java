@@ -1,7 +1,9 @@
 package com.arakviel.application.impl;
 
 import com.arakviel.application.contract.GenreService;
+import com.arakviel.application.exception.MultiFieldValidationException;
 import com.arakviel.application.exception.ValidationException;
+import com.arakviel.application.validation.ValidationHelper;
 import com.arakviel.domain.entities.Audiobook;
 import com.arakviel.domain.entities.Genre;
 import com.arakviel.infrastructure.persistence.PersistenceContext;
@@ -52,7 +54,9 @@ public class GenreServiceImpl implements GenreService {
 
         // Перевірка на дублювання жанру
         if (genreRepository.existsByName(genre.getName())) {
-            throw new ValidationException("Жанр з назвою '" + genre.getName() + "' уже існує.");
+            new ValidationHelper()
+                    .addError("name", "жанр з такою назвою вже існує")
+                    .throwIfHasErrors();
         }
 
         persistenceContext.registerNew(genre);
@@ -74,16 +78,20 @@ public class GenreServiceImpl implements GenreService {
         validateGenre(genre);
         genre.setId(id);
 
+        ValidationHelper validator = new ValidationHelper();
+
         // Перевірка існування жанру
         if (!genreRepository.findById(id).isPresent()) {
-            throw new ValidationException("Жанр з ідентифікатором " + id + " не існує.");
+            validator.addError("id", "жанр з таким ідентифікатором не існує");
         }
 
         // Перевірка на дублювання назви при оновленні
         List<Genre> existingGenres = genreRepository.findByName(genre.getName());
         if (!existingGenres.isEmpty() && !existingGenres.get(0).getId().equals(id)) {
-            throw new ValidationException("Жанр з назвою '" + genre.getName() + "' уже існує.");
+            validator.addError("name", "жанр з такою назвою вже існує");
         }
+
+        validator.throwIfHasErrors();
 
         persistenceContext.registerUpdated(id, genre);
         persistenceContext.commit();
@@ -103,7 +111,9 @@ public class GenreServiceImpl implements GenreService {
         if (genreOpt.isPresent()) {
             // Перевірка, чи жанр пов'язаний з аудіокнигами
             if (countAudiobooksByGenreId(id) > 0) {
-                throw new ValidationException("Неможливо видалити жанр, оскільки він пов'язаний з аудіокнигами.");
+                new ValidationHelper()
+                        .addError("id", "неможливо видалити жанр, оскільки він пов'язаний з аудіокнигами")
+                        .throwIfHasErrors();
             }
 
             persistenceContext.registerDeleted(genreOpt.get());
@@ -142,9 +152,9 @@ public class GenreServiceImpl implements GenreService {
      */
     @Override
     public List<Genre> findByName(String name) {
-        if (name == null || name.trim().isEmpty()) {
-            throw new ValidationException("Назва жанру не може бути null або порожньою.");
-        }
+        new ValidationHelper()
+                .notEmpty("name", name)
+                .throwIfHasErrors();
         return genreRepository.findByName(name);
     }
 
@@ -156,9 +166,9 @@ public class GenreServiceImpl implements GenreService {
      */
     @Override
     public List<Genre> findByPartialName(String partialName) {
-        if (partialName == null || partialName.trim().isEmpty()) {
-            throw new ValidationException("Часткова назва жанру не може бути null або порожньою.");
-        }
+        new ValidationHelper()
+                .notEmpty("partialName", partialName)
+                .throwIfHasErrors();
         return genreRepository.findByPartialName(partialName);
     }
 
@@ -170,9 +180,9 @@ public class GenreServiceImpl implements GenreService {
      */
     @Override
     public List<Audiobook> findAudiobooksByGenreId(UUID genreId) {
-        if (genreId == null) {
-            throw new ValidationException("Ідентифікатор жанру не може бути null.");
-        }
+        new ValidationHelper()
+                .validUuid("genreId", genreId)
+                .throwIfHasErrors();
         return genreRepository.findAudiobooksByGenreId(genreId);
     }
 
@@ -184,9 +194,9 @@ public class GenreServiceImpl implements GenreService {
      */
     @Override
     public List<Genre> findByAudiobookId(UUID audiobookId) {
-        if (audiobookId == null) {
-            throw new ValidationException("Ідентифікатор аудіокниги не може бути null.");
-        }
+        new ValidationHelper()
+                .validUuid("audiobookId", audiobookId)
+                .throwIfHasErrors();
         return genreRepository.findByAudiobookId(audiobookId);
     }
 
@@ -198,9 +208,9 @@ public class GenreServiceImpl implements GenreService {
      */
     @Override
     public long countAudiobooksByGenreId(UUID genreId) {
-        if (genreId == null) {
-            throw new ValidationException("Ідентифікатор жанру не може бути null.");
-        }
+        new ValidationHelper()
+                .validUuid("genreId", genreId)
+                .throwIfHasErrors();
         return genreRepository.countAudiobooksByGenreId(genreId);
     }
 
@@ -212,24 +222,26 @@ public class GenreServiceImpl implements GenreService {
      */
     @Override
     public boolean existsByName(String name) {
-        if (name == null || name.trim().isEmpty()) {
-            throw new ValidationException("Назва жанру не може бути null або порожньою.");
-        }
+        new ValidationHelper()
+                .notEmpty("name", name)
+                .throwIfHasErrors();
         return genreRepository.existsByName(name);
     }
 
     /**
-     * Валідує дані жанру перед створенням або оновленням.
+     * Валідує дані жанру перед створенням або оновленням з використанням нового підходу.
      *
      * @param genre жанр для валідації
-     * @throws ValidationException якщо порушено бізнес-правила
+     * @throws MultiFieldValidationException якщо порушено бізнес-правила
      */
     private void validateGenre(Genre genre) {
-        if (genre == null) {
-            throw new ValidationException("Жанр не може бути null.");
+        ValidationHelper validator = new ValidationHelper()
+                .notNull("genre", genre);
+
+        if (genre != null) {
+            validator.notEmpty("name", genre.getName());
         }
-        if (genre.getName() == null || genre.getName().trim().isEmpty()) {
-            throw new ValidationException("Назва жанру не може бути null або порожньою.");
-        }
+
+        validator.throwIfHasErrors();
     }
 }

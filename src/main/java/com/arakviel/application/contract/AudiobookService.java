@@ -1,7 +1,10 @@
 package com.arakviel.application.contract;
 
+import com.arakviel.application.exception.ValidationException;
 import com.arakviel.domain.entities.Audiobook;
 import com.arakviel.domain.entities.AudiobookFile;
+import com.arakviel.domain.entities.Author;
+import com.arakviel.domain.entities.Genre;
 import com.arakviel.domain.enums.FileFormat;
 import com.arakviel.infrastructure.file.exception.FileStorageException;
 import com.arakviel.infrastructure.persistence.exception.DatabaseAccessException;
@@ -98,4 +101,152 @@ public interface AudiobookService {
      * @throws FileStorageException    якщо виникає помилка при роботі з файлами
      */
     void deleteAudiobookFile(UUID audiobookId, UUID fileId);
+
+    /**
+     * Знаходить аудіокниги за назвою.
+     *
+     * @param title назва аудіокниги
+     * @return список аудіокниг
+     */
+    List<Audiobook> findByTitle(String title);
+
+    /**
+     * Знаходить аудіокниги за частковою відповідністю назви.
+     *
+     * @param partialTitle часткова назва аудіокниги
+     * @return список аудіокниг
+     */
+    List<Audiobook> findByPartialTitle(String partialTitle);
+
+    /**
+     * Знаходить аудіокниги за автором.
+     *
+     * @param authorId ідентифікатор автора
+     * @return список аудіокниг
+     */
+    List<Audiobook> findByAuthorId(UUID authorId);
+
+    /**
+     * Знаходить аудіокниги за жанром.
+     *
+     * @param genreId ідентифікатор жанру
+     * @return список аудіокниг
+     */
+    List<Audiobook> findByGenreId(UUID genreId);
+
+    /**
+     * Знаходить аудіокниги за роком публікації.
+     *
+     * @param year рік публікації
+     * @return список аудіокниг
+     */
+    List<Audiobook> findByPublicationYear(int year);
+
+    /**
+     * Знаходить аудіокниги за діапазоном тривалості.
+     *
+     * @param minDuration мінімальна тривалість у секундах
+     * @param maxDuration максимальна тривалість у секундах
+     * @return список аудіокниг
+     */
+    List<Audiobook> findByDurationRange(int minDuration, int maxDuration);
+
+    /**
+     * Знаходить найпопулярніші аудіокниги (за кількістю прослуховувань).
+     *
+     * @param limit кількість записів для отримання
+     * @return список популярних аудіокниг
+     */
+    List<Audiobook> findMostPopular(int limit);
+
+    /**
+     * Знаходить нещодавно додані аудіокниги.
+     *
+     * @param limit кількість записів для отримання
+     * @return список нещодавно доданих аудіокниг
+     */
+    List<Audiobook> findRecentlyAdded(int limit);
+
+    /**
+     * Підраховує загальну кількість аудіокниг.
+     *
+     * @return загальна кількість аудіокниг
+     */
+    long count();
+
+    /**
+     * Підраховує кількість аудіокниг за автором.
+     *
+     * @param authorId ідентифікатор автора
+     * @return кількість аудіокниг
+     */
+    long countByAuthorId(UUID authorId);
+
+    /**
+     * Підраховує кількість аудіокниг за жанром.
+     *
+     * @param genreId ідентифікатор жанру
+     * @return кількість аудіокниг
+     */
+    long countByGenreId(UUID genreId);
+
+    /**
+     * Обчислює загальну тривалість всіх аудіокниг.
+     *
+     * @return загальна тривалість у секундах
+     */
+    long calculateTotalDuration();
+
+    /**
+     * Обчислює середню тривалість аудіокниг.
+     *
+     * @return середня тривалість у секундах
+     */
+    double calculateAverageDuration();
+
+    /**
+     * Знаходить найдовшу аудіокнигу.
+     *
+     * @return Optional з найдовшою аудіокнигою, якщо знайдено
+     */
+    Optional<Audiobook> findLongest();
+
+    /**
+     * Знаходить найкоротшу аудіокнигу.
+     *
+     * @return Optional з найкоротшою аудіокнигою, якщо знайдено
+     */
+    Optional<Audiobook> findShortest();
+
+    /**
+     * Перевіряє, чи існує аудіокнига з такою назвою та автором.
+     *
+     * @param title    назва аудіокниги
+     * @param authorId ідентифікатор автора
+     * @return true, якщо аудіокнига існує
+     */
+    boolean existsByTitleAndAuthorId(String title, UUID authorId);
+
+    /**
+     * Знаходить схожі аудіокниги за жанром та автором.
+     *
+     * @param audiobookId ідентифікатор аудіокниги
+     * @param limit       кількість записів для отримання
+     * @return список схожих аудіокниг
+     */
+    List<Audiobook> findSimilar(UUID audiobookId, int limit);
+
+    /**
+     * Отримує статистику аудіокниг за жанрами.
+     *
+     * @return мапа з кількістю аудіокниг для кожного жанру
+     */
+    java.util.Map<Genre, Long> getGenreStatistics();
+
+    /**
+     * Отримує статистику аудіокниг за авторами.
+     *
+     * @return мапа з кількістю аудіокниг для кожного автора
+     */
+    java.util.Map<Author, Long> getAuthorStatistics();
 }

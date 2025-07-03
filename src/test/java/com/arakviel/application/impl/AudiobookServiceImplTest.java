@@ -148,7 +148,6 @@ class AudiobookServiceImplTest {
     void givenFileStorageError_whenUpdatingAudiobookWithCover_thenShouldThrowFileStorageException() {
         // Arrange
         audiobook.setCoverImagePath("old-cover.jpg");
-        doNothing().when(fileStorageService).delete("old-cover.jpg", audiobookId);
         doThrow(FileStorageException.class).when(fileStorageService).delete("old-cover.jpg", audiobookId);
 
         // Act & Assert

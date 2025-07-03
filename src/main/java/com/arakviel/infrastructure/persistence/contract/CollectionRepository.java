@@ -74,4 +74,121 @@ public interface CollectionRepository extends Repository<Collection, UUID> {
      * @param collectionId ідентифікатор колекції
      */
     void clearCollection(UUID collectionId);
+
+    /**
+     * Пошук колекцій за частковою відповідністю назви.
+     *
+     * @param partialName часткова назва колекції
+     * @return список колекцій
+     */
+    List<Collection> findByPartialName(String partialName);
+
+    /**
+     * Додавання аудіокниги до колекції.
+     *
+     * @param collectionId ідентифікатор колекції
+     * @param audiobookId  ідентифікатор аудіокниги
+     */
+    void addAudiobookToCollection(UUID collectionId, UUID audiobookId);
+
+    /**
+     * Видалення аудіокниги з колекції.
+     *
+     * @param collectionId ідентифікатор колекції
+     * @param audiobookId  ідентифікатор аудіокниги
+     */
+    void removeAudiobookFromCollection(UUID collectionId, UUID audiobookId);
+
+    /**
+     * Перевірка, чи містить колекція певну аудіокнигу.
+     *
+     * @param collectionId ідентифікатор колекції
+     * @param audiobookId  ідентифікатор аудіокниги
+     * @return true, якщо аудіокнига є в колекції
+     */
+    boolean containsAudiobook(UUID collectionId, UUID audiobookId);
+
+    /**
+     * Підрахунок кількості колекцій користувача.
+     *
+     * @param userId ідентифікатор користувача
+     * @return кількість колекцій
+     */
+    long countByUserId(UUID userId);
+
+    /**
+     * Знаходить колекції користувача за назвою.
+     *
+     * @param userId ідентифікатор користувача
+     * @param name   назва колекції
+     * @return список колекцій
+     */
+    List<Collection> findByUserIdAndName(UUID userId, String name);
+
+    /**
+     * Перевіряє, чи існує колекція з такою назвою у користувача.
+     *
+     * @param userId ідентифікатор користувача
+     * @param name   назва колекції
+     * @return true, якщо колекція існує
+     */
+    boolean existsByUserIdAndName(UUID userId, String name);
+
+    // ========== ПУБЛІЧНІ КОЛЕКЦІЇ ==========
+
+    /**
+     * Знаходить всі публічні колекції (user_id = NULL) з пагінацією.
+     *
+     * @param offset зміщення для пагінації
+     * @param limit  кількість записів для отримання
+     * @return список публічних колекцій
+     */
+    List<Collection> findPublicCollections(int offset, int limit);
+
+    /**
+     * Знаходить публічні колекції за назвою.
+     *
+     * @param name назва колекції
+     * @return список публічних колекцій
+     */
+    List<Collection> findPublicCollectionsByName(String name);
+
+    /**
+     * Знаходить публічні колекції за частковою відповідністю назви.
+     *
+     * @param partialName часткова назва колекції
+     * @return список публічних колекцій
+     */
+    List<Collection> findPublicCollectionsByPartialName(String partialName);
+
+    /**
+     * Підраховує кількість публічних колекцій.
+     *
+     * @return кількість публічних колекцій
+     */
+    long countPublicCollections();
+
+    /**
+     * Перевіряє, чи існує публічна колекція з такою назвою.
+     *
+     * @param name назва колекції
+     * @return true, якщо публічна колекція існує
+     */
+    boolean existsPublicCollectionByName(String name);
+
+    /**
+     * Знаходить найпопулярніші публічні колекції (за кількістю аудіокниг).
+     *
+     * @param limit кількість записів для отримання
+     * @return список популярних публічних колекцій
+     */
+    List<Collection> findMostPopularPublicCollections(int limit);
+
+    /**
+     * Знаходить нещодавно створені публічні колекції.
+     *
+     * @param limit кількість записів для отримання
+     * @return список нещодавно створених публічних колекцій
+     */
+    List<Collection> findRecentlyCreatedPublicCollections(int limit);
 }

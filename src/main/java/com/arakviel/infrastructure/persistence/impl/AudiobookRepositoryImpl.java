@@ -141,6 +141,102 @@ public class AudiobookRepositoryImpl extends GenericRepository<Audiobook, UUID> 
         return count(filter);
     }
 
+    @Override
+    public List<Audiobook> findByTitle(String title) {
+        return findByField("title", title);
+    }
+
+    @Override
+    public List<Audiobook> findByPartialTitle(String partialTitle) {
+        return findAll(
+                (whereClause, params) -> {
+                    whereClause.add("title ILIKE ?");
+                    params.add("%" + partialTitle + "%");
+                },
+                null, true, 0, Integer.MAX_VALUE
+        );
+    }
+
+    @Override
+    public List<Audiobook> findByPublicationYear(int year) {
+        return findByField("release_year", year);
+    }
+
+    @Override
+    public List<Audiobook> findMostPopular(int limit) {
+        // Простий підхід - сортування за назвою (в реальному проекті - за кількістю прослуховувань)
+        return findAll(null, "title", true, 0, limit);
+    }
+
+    @Override
+    public List<Audiobook> findRecentlyAdded(int limit) {
+        // Простий підхід - сортування за роком випуску (в реальному проекті - за датою додавання)
+        return findAll(null, "release_year", false, 0, limit);
+    }
+
+    @Override
+    public long calculateTotalDuration() {
+        // Простий підрахунок через суму - в реальному проекті краще використати SQL SUM
+        List<Audiobook> audiobooks = findAll();
+        return audiobooks.stream().mapToLong(Audiobook::getDuration).sum();
+    }
+
+    @Override
+    public double calculateAverageDuration() {
+        List<Audiobook> audiobooks = findAll();
+        if (audiobooks.isEmpty()) {
+            return 0.0;
+        }
+        return audiobooks.stream().mapToLong(Audiobook::getDuration).average().orElse(0.0);
+    }
+
+    @Override
+    public java.util.Optional<Audiobook> findLongest() {
+        List<Audiobook> audiobooks = findAll();
+        return audiobooks.stream().max((a1, a2) -> Integer.compare(a1.getDuration(), a2.getDuration()));
+    }
+
+    @Override
+    public java.util.Optional<Audiobook> findShortest() {
+        List<Audiobook> audiobooks = findAll();
+        return audiobooks.stream().min((a1, a2) -> Integer.compare(a1.getDuration(), a2.getDuration()));
+    }
+
+    @Override
+    public boolean existsByTitleAndAuthorId(String title, UUID authorId) {
+        Filter filter = (whereClause, params) -> {
+            whereClause.add("title = ?");
+            whereClause.add("author_id = ?");
+            params.add(title);
+            params.add(authorId);
+        };
+        return count(filter) > 0;
+    }
+
+    @Override
+    public List<Audiobook> findSimilar(UUID audiobookId, int limit) {
+        // Простий підхід - знаходимо аудіокниги того ж автора або жанру
+        java.util.Optional<Audiobook> audiobookOpt = findById(audiobookId);
+        if (!audiobookOpt.isPresent()) {
+            return java.util.Collections.emptyList();
+        }
+
+        Audiobook audiobook = audiobookOpt.get();
+        List<Audiobook> similar = new java.util.ArrayList<>();
+
+        // Додаємо аудіокниги того ж автора
+        similar.addAll(findByAuthorId(audiobook.getAuthorId()));
+
+        // Додаємо аудіокниги того ж жанру
+        similar.addAll(findByGenreId(audiobook.getGenreId()));
+
+        // Видаляємо оригінальну аудіокнигу та дублікати
+        return similar.stream()
+                .filter(a -> !a.getId().equals(audiobookId))
+                .distinct()
+                .limit(limit)
+                .collect(java.util.stream.Collectors.toList());
+    }
 
     /**
      * Зіставлення ResultSet у список файлів аудіокниги.

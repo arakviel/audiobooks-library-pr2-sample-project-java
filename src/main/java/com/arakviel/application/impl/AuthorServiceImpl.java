@@ -1,7 +1,9 @@
 package com.arakviel.application.impl;
 
 import com.arakviel.application.contract.AuthorService;
+import com.arakviel.application.exception.MultiFieldValidationException;
 import com.arakviel.application.exception.ValidationException;
+import com.arakviel.application.validation.ValidationHelper;
 import com.arakviel.domain.entities.Audiobook;
 import com.arakviel.domain.entities.Author;
 import com.arakviel.infrastructure.file.FileStorageService;
@@ -64,7 +66,9 @@ public class AuthorServiceImpl implements AuthorService {
         // Перевірка на дублювання автора
         List<Author> existingAuthors = authorRepository.findByName(author.getFirstName(), author.getLastName());
         if (!existingAuthors.isEmpty()) {
-            throw new ValidationException("Автор з таким ім'ям та прізвищем уже існує.");
+            new ValidationHelper()
+                    .addError("author", "автор з таким ім'ям та прізвищем уже існує")
+                    .throwIfHasErrors();
         }
 
         // Обробка завантаження фотографії
@@ -97,7 +101,9 @@ public class AuthorServiceImpl implements AuthorService {
 
         // Перевірка існування автора
         if (!authorRepository.findById(id).isPresent()) {
-            throw new ValidationException("Автор з ідентифікатором " + id + " не існує.");
+            new ValidationHelper()
+                    .addError("id", "автор з таким ідентифікатором не існує")
+                    .throwIfHasErrors();
         }
 
         // Обробка існуючої фотографії
@@ -132,7 +138,9 @@ public class AuthorServiceImpl implements AuthorService {
 
             // Перевірка, чи автор пов'язаний з аудіокнигами
             if (countAudiobooksByAuthorId(id) > 0) {
-                throw new ValidationException("Неможливо видалити автора, оскільки він пов'язаний з аудіокнигами.");
+                new ValidationHelper()
+                        .addError("id", "неможливо видалити автора, оскільки він пов'язаний з аудіокнигами")
+                        .throwIfHasErrors();
             }
 
             // Видалення фотографії
@@ -177,9 +185,10 @@ public class AuthorServiceImpl implements AuthorService {
      */
     @Override
     public List<Author> findByName(String firstName, String lastName) {
-        if (firstName == null || lastName == null) {
-            throw new ValidationException("Ім'я та прізвище не можуть бути null.");
-        }
+        new ValidationHelper()
+                .notNull("firstName", firstName)
+                .notNull("lastName", lastName)
+                .throwIfHasErrors();
         return authorRepository.findByName(firstName, lastName);
     }
 
@@ -191,9 +200,9 @@ public class AuthorServiceImpl implements AuthorService {
      */
     @Override
     public List<Author> findByPartialName(String partialName) {
-        if (partialName == null || partialName.trim().isEmpty()) {
-            throw new ValidationException("Часткове ім'я не може бути null або порожнім.");
-        }
+        new ValidationHelper()
+                .notEmpty("partialName", partialName)
+                .throwIfHasErrors();
         return authorRepository.findByPartialName(partialName);
     }
 
@@ -205,9 +214,9 @@ public class AuthorServiceImpl implements AuthorService {
      */
     @Override
     public List<Audiobook> findAudiobooksByAuthorId(UUID authorId) {
-        if (authorId == null) {
-            throw new ValidationException("Ідентифікатор автора не може бути null.");
-        }
+        new ValidationHelper()
+                .validUuid("authorId", authorId)
+                .throwIfHasErrors();
         return authorRepository.findAudiobooksByAuthorId(authorId);
     }
 
@@ -219,27 +228,28 @@ public class AuthorServiceImpl implements AuthorService {
      */
     @Override
     public long countAudiobooksByAuthorId(UUID authorId) {
-        if (authorId == null) {
-            throw new ValidationException("Ідентифікатор автора не може бути null.");
-        }
+        new ValidationHelper()
+                .validUuid("authorId", authorId)
+                .throwIfHasErrors();
         return authorRepository.countAudiobooksByAuthorId(authorId);
     }
 
     /**
-     * Валідує дані автора перед створенням або оновленням.
+     * Валідує дані автора перед створенням або оновленням з використанням нового підходу.
      *
      * @param author автор для валідації
-     * @throws ValidationException якщо порушено бізнес-правила
+     * @throws MultiFieldValidationException якщо порушено бізнес-правила
      */
     private void validateAuthor(Author author) {
-        if (author == null) {
-            throw new ValidationException("Автор не може бути null.");
+        ValidationHelper validator = new ValidationHelper()
+                .notNull("author", author);
+
+        if (author != null) {
+            validator
+                    .notEmpty("firstName", author.getFirstName())
+                    .notEmpty("lastName", author.getLastName());
         }
-        if (author.getFirstName() == null || author.getFirstName().trim().isEmpty()) {
-            throw new ValidationException("Ім'я автора не може бути null або порожнім.");
-        }
-        if (author.getLastName() == null || author.getLastName().trim().isEmpty()) {
-            throw new ValidationException("Прізвище автора не може бути null або порожнім.");
-        }
+
+        validator.throwIfHasErrors();
     }
 }

@@ -1,20 +1,29 @@
 package com.arakviel.application.impl;
 
 import com.arakviel.application.contract.AudiobookService;
+import com.arakviel.application.exception.MultiFieldValidationException;
+import com.arakviel.application.exception.ValidationException;
+import com.arakviel.application.validation.ValidationHelper;
 import com.arakviel.domain.entities.Audiobook;
 import com.arakviel.domain.entities.AudiobookFile;
+import com.arakviel.domain.entities.Author;
+import com.arakviel.domain.entities.Genre;
 import com.arakviel.domain.enums.FileFormat;
 import com.arakviel.infrastructure.file.FileStorageService;
 import com.arakviel.infrastructure.file.exception.FileStorageException;
 import com.arakviel.infrastructure.persistence.PersistenceContext;
 import com.arakviel.infrastructure.persistence.contract.AudiobookFileRepository;
 import com.arakviel.infrastructure.persistence.contract.AudiobookRepository;
+import com.arakviel.infrastructure.persistence.contract.AuthorRepository;
+import com.arakviel.infrastructure.persistence.contract.GenreRepository;
 import com.arakviel.infrastructure.persistence.exception.DatabaseAccessException;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -26,6 +35,8 @@ public class AudiobookServiceImpl implements AudiobookService {
 
     private final AudiobookRepository audiobookRepository;
     private final AudiobookFileRepository audiobookFileRepository;
+    private final AuthorRepository authorRepository;
+    private final GenreRepository genreRepository;
     private final PersistenceContext persistenceContext;
     private final FileStorageService fileStorageService;
 
@@ -34,16 +45,22 @@ public class AudiobookServiceImpl implements AudiobookService {
      *
      * @param audiobookRepository     репозиторій аудіокниг
      * @param audiobookFileRepository репозиторій файлів аудіокниг
+     * @param authorRepository        репозиторій авторів
+     * @param genreRepository         репозиторій жанрів
      * @param persistenceContext      контекст для управління транзакціями
      * @param fileStorageService      сервіс для роботи з файлами
      */
     public AudiobookServiceImpl(
             AudiobookRepository audiobookRepository,
             AudiobookFileRepository audiobookFileRepository,
+            AuthorRepository authorRepository,
+            GenreRepository genreRepository,
             PersistenceContext persistenceContext,
             FileStorageService fileStorageService) {
         this.audiobookRepository = audiobookRepository;
         this.audiobookFileRepository = audiobookFileRepository;
+        this.authorRepository = authorRepository;
+        this.genreRepository = genreRepository;
         this.persistenceContext = persistenceContext;
         this.fileStorageService = fileStorageService;
     }
@@ -214,5 +231,153 @@ public class AudiobookServiceImpl implements AudiobookService {
                 persistenceContext.commit();
             }
         }
+    }
+
+    @Override
+    public List<Audiobook> findByTitle(String title) {
+        new ValidationHelper()
+                .notEmpty("title", title)
+                .throwIfHasErrors();
+        return audiobookRepository.findByTitle(title);
+    }
+
+    @Override
+    public List<Audiobook> findByPartialTitle(String partialTitle) {
+        new ValidationHelper()
+                .notEmpty("partialTitle", partialTitle)
+                .throwIfHasErrors();
+        return audiobookRepository.findByPartialTitle(partialTitle);
+    }
+
+    @Override
+    public List<Audiobook> findByAuthorId(UUID authorId) {
+        new ValidationHelper()
+                .validUuid("authorId", authorId)
+                .throwIfHasErrors();
+        return audiobookRepository.findByAuthorId(authorId);
+    }
+
+    @Override
+    public List<Audiobook> findByGenreId(UUID genreId) {
+        new ValidationHelper()
+                .validUuid("genreId", genreId)
+                .throwIfHasErrors();
+        return audiobookRepository.findByGenreId(genreId);
+    }
+
+    @Override
+    public List<Audiobook> findByPublicationYear(int year) {
+        new ValidationHelper()
+                .nonNegative("year", year)
+                .throwIfHasErrors();
+        return audiobookRepository.findByPublicationYear(year);
+    }
+
+    @Override
+    public List<Audiobook> findByDurationRange(int minDuration, int maxDuration) {
+        new ValidationHelper()
+                .nonNegative("minDuration", minDuration)
+                .nonNegative("maxDuration", maxDuration)
+                .addErrorIf(maxDuration < minDuration, "maxDuration",
+                    "не може бути меншою за мінімальну тривалість")
+                .throwIfHasErrors();
+        return audiobookRepository.findByDurationRange(minDuration, maxDuration);
+    }
+
+    @Override
+    public List<Audiobook> findMostPopular(int limit) {
+        new ValidationHelper()
+                .positive("limit", limit)
+                .throwIfHasErrors();
+        return audiobookRepository.findMostPopular(limit);
+    }
+
+    @Override
+    public List<Audiobook> findRecentlyAdded(int limit) {
+        new ValidationHelper()
+                .positive("limit", limit)
+                .throwIfHasErrors();
+        return audiobookRepository.findRecentlyAdded(limit);
+    }
+
+    @Override
+    public long count() {
+        return audiobookRepository.count();
+    }
+
+    @Override
+    public long countByAuthorId(UUID authorId) {
+        new ValidationHelper()
+                .validUuid("authorId", authorId)
+                .throwIfHasErrors();
+        return audiobookRepository.countByAuthorId(authorId);
+    }
+
+    @Override
+    public long countByGenreId(UUID genreId) {
+        new ValidationHelper()
+                .validUuid("genreId", genreId)
+                .throwIfHasErrors();
+        return audiobookRepository.countByGenreId(genreId);
+    }
+
+    @Override
+    public long calculateTotalDuration() {
+        return audiobookRepository.calculateTotalDuration();
+    }
+
+    @Override
+    public double calculateAverageDuration() {
+        return audiobookRepository.calculateAverageDuration();
+    }
+
+    @Override
+    public Optional<Audiobook> findLongest() {
+        return audiobookRepository.findLongest();
+    }
+
+    @Override
+    public Optional<Audiobook> findShortest() {
+        return audiobookRepository.findShortest();
+    }
+
+    @Override
+    public boolean existsByTitleAndAuthorId(String title, UUID authorId) {
+        new ValidationHelper()
+                .notEmpty("title", title)
+                .validUuid("authorId", authorId)
+                .throwIfHasErrors();
+        return audiobookRepository.existsByTitleAndAuthorId(title, authorId);
+    }
+
+    @Override
+    public List<Audiobook> findSimilar(UUID audiobookId, int limit) {
+        new ValidationHelper()
+                .validUuid("audiobookId", audiobookId)
+                .positive("limit", limit)
+                .throwIfHasErrors();
+        return audiobookRepository.findSimilar(audiobookId, limit);
+    }
+
+    @Override
+    public Map<Genre, Long> getGenreStatistics() {
+        Map<Genre, Long> statistics = new HashMap<>();
+        List<Genre> genres = genreRepository.findAll(0, Integer.MAX_VALUE);
+        for (Genre genre : genres) {
+            long count = countByGenreId(genre.getId());
+            statistics.put(genre, count);
+        }
+        return statistics;
+    }
+
+    @Override
+    public Map<Author, Long> getAuthorStatistics() {
+        Map<Author, Long> statistics = new HashMap<>();
+        List<Author> authors = authorRepository.findAll(0, Integer.MAX_VALUE);
+        for (Author author : authors) {
+            long count = countByAuthorId(author.getId());
+            statistics.put(author, count);
+        }
+        return statistics;
     }
 }

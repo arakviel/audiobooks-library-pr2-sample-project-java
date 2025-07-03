@@ -9,7 +9,10 @@ import com.arakviel.infrastructure.persistence.exception.DatabaseAccessException
 import com.arakviel.infrastructure.persistence.util.ConnectionPool;
 import org.springframework.stereotype.Repository;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.UUID;
@@ -100,11 +103,8 @@ public class UserRepositoryImpl extends GenericRepository<User, UUID> implements
      */
     @Override
     public long countCollectionsByUserId(UUID userId) {
-        Filter filter = (whereClause, params) -> {
-            whereClause.add("user_id = ?");
-            params.add(userId);
-        };
-        return count(filter, "collections");
+        String sql = "SELECT COUNT(*) FROM collections WHERE user_id = ?";
+        return executeCountQuery(sql, stmt -> stmt.setObject(1, userId));
     }
 
     /**
@@ -115,11 +115,8 @@ public class UserRepositoryImpl extends GenericRepository<User, UUID> implements
      */
     @Override
     public long countListeningProgressByUserId(UUID userId) {
-        Filter filter = (whereClause, params) -> {
-            whereClause.add("user_id = ?");
-            params.add(userId);
-        };
-        return count(filter, "listening_progresses");
+        String sql = "SELECT COUNT(*) FROM listening_progresses WHERE user_id = ?";
+        return executeCountQuery(sql, stmt -> stmt.setObject(1, userId));
     }
 
     /**
@@ -191,5 +188,39 @@ public class UserRepositoryImpl extends GenericRepository<User, UUID> implements
         } catch (Exception e) {
             throw new DatabaseAccessException("Помилка зіставлення ResultSet із прогресом прослуховування", e);
         }
+    }
+
+    /**
+     * Виконання запиту для підрахунку записів.
+     *
+     * @param sql           SQL запит
+     * @param parameterSetter функція для встановлення параметрів
+     * @return кількість записів
+     */
+    private long executeCountQuery(String sql, ParameterSetter parameterSetter) {
+        try (Connection connection = connectionPool.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            if (parameterSetter != null) {
+                parameterSetter.setParameters(statement);
+            }
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getLong(1);
+                }
+                return 0;
+            }
+        } catch (SQLException e) {
+            throw new DatabaseAccessException("Помилка виконання запиту підрахунку", e);
+        }
+    }
+
+    /**
+     * Функціональний інтерфейс для встановлення параметрів запиту.
+     */
+    @FunctionalInterface
+    private interface ParameterSetter {
+        void setParameters(PreparedStatement statement) throws SQLException;
     }
 }
