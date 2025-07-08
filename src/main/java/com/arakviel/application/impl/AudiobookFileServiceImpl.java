@@ -51,15 +51,18 @@ public class AudiobookFileServiceImpl implements AudiobookFileService {
             audiobookFile.setId(UUID.randomUUID());
         }
 
-        // Перевірка існування аудіокниги
+        // Перевірка існування аудіокниги та дублювання шляху файлу
+        ValidationHelper businessValidator = new ValidationHelper();
+
         if (!audiobookRepository.findById(audiobookFile.getAudiobookId()).isPresent()) {
-            throw new ValidationException("Аудіокнига з ідентифікатором " + audiobookFile.getAudiobookId() + " не існує.");
+            businessValidator.addError("audiobookId", "аудіокнига з таким ідентифікатором не існує");
         }
 
-        // Перевірка на дублювання шляху файлу
         if (existsByAudiobookIdAndFilePath(audiobookFile.getAudiobookId(), audiobookFile.getFilePath())) {
-            throw new ValidationException("Файл з таким шляхом вже існує для цієї аудіокниги.");
+            businessValidator.addError("filePath", "файл з таким шляхом вже існує для цієї аудіокниги");
         }
+
+        businessValidator.throwIfHasErrors();
 
         // Завантаження файлу
         if (inputStream != null && fileName != null) {
@@ -197,9 +200,9 @@ public class AudiobookFileServiceImpl implements AudiobookFileService {
 
     @Override
     public Optional<AudiobookFile> findSmallestFileByAudiobookId(UUID audiobookId) {
-        if (audiobookId == null) {
-            throw new ValidationException("Ідентифікатор аудіокниги не може бути null.");
-        }
+        new ValidationHelper()
+                .validUuid("audiobookId", audiobookId)
+                .throwIfHasErrors();
         return audiobookFileRepository.findSmallestFileByAudiobookId(audiobookId);
     }
 
@@ -232,16 +235,19 @@ public class AudiobookFileServiceImpl implements AudiobookFileService {
                 .notEmpty("newFileName", newFileName)
                 .throwIfHasErrors();
 
-        // Перевірка існування вихідного файлу
+        // Перевірка існування вихідного файлу та цільової аудіокниги
+        ValidationHelper copyValidator = new ValidationHelper();
+
         Optional<AudiobookFile> sourceFileOpt = audiobookFileRepository.findById(sourceFileId);
         if (!sourceFileOpt.isPresent()) {
-            throw new ValidationException("Вихідний файл не існує.");
+            copyValidator.addError("sourceFileId", "вихідний файл не існує");
         }
 
-        // Перевірка існування цільової аудіокниги
         if (!audiobookRepository.findById(targetAudiobookId).isPresent()) {
-            throw new ValidationException("Цільова аудіокнига не існує.");
+            copyValidator.addError("targetAudiobookId", "цільова аудіокнига не існує");
         }
+
+        copyValidator.throwIfHasErrors();
 
         AudiobookFile sourceFile = sourceFileOpt.get();
 
@@ -303,9 +309,9 @@ public class AudiobookFileServiceImpl implements AudiobookFileService {
 
     @Override
     public List<AudiobookFile> findPotentialDuplicates(UUID audiobookId) {
-        if (audiobookId == null) {
-            throw new ValidationException("Ідентифікатор аудіокниги не може бути null.");
-        }
+        new ValidationHelper()
+                .validUuid("audiobookId", audiobookId)
+                .throwIfHasErrors();
         return audiobookFileRepository.findPotentialDuplicates(audiobookId);
     }
 

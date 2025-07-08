@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<VBox xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.arakviel.presentation.controller.DashboardController">
+   <children>
+      <!-- Заголовок сторінки -->
+      <VBox styleClass="page-header">
+         <children>
+            <Label fx:id="welcomeLabel" styleClass="page-title" text="Ласкаво просимо!">
+               <font>
+                  <Font name="System Bold" size="28.0" />
+               </font>
+            </Label>
+            <Label styleClass="page-subtitle" text="Огляд вашої бібліотеки аудіокниг" />
+         </children>
+         <padding>
+            <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
+         </padding>
+      </VBox>
+      
+      <!-- Статистичні картки -->
+      <GridPane hgap="20.0" vgap="20.0" styleClass="statistics-grid">
+         <columnConstraints>
+            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+         </columnConstraints>
+         <rowConstraints>
+            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+         </rowConstraints>
+         <children>
+            <!-- Картка аудіокниг -->
+            <VBox styleClass="stat-card" GridPane.columnIndex="0" GridPane.rowIndex="0">
+               <children>
+                  <Label styleClass="stat-icon" text="📚" />
+                  <Label fx:id="totalAudiobooksLabel" styleClass="stat-number" text="0">
+                     <font>
+                        <Font name="System Bold" size="36.0" />
+                     </font>
+                  </Label>
+                  <Label styleClass="stat-label" text="Аудіокниг" />
+               </children>
+               <padding>
+                  <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+               </padding>
+            </VBox>
+            
+            <!-- Картка авторів -->
+            <VBox styleClass="stat-card" GridPane.columnIndex="1" GridPane.rowIndex="0">
+               <children>
+                  <Label styleClass="stat-icon" text="👤" />
+                  <Label fx:id="totalAuthorsLabel" styleClass="stat-number" text="0">
+                     <font>
+                        <Font name="System Bold" size="36.0" />
+                     </font>
+                  </Label>
+                  <Label styleClass="stat-label" text="Авторів" />
+               </children>
+               <padding>
+                  <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+               </padding>
+            </VBox>
+            
+            <!-- Картка колекцій -->
+            <VBox styleClass="stat-card" GridPane.columnIndex="0" GridPane.rowIndex="1">
+               <children>
+                  <Label styleClass="stat-icon" text="📁" />
+                  <Label fx:id="totalCollectionsLabel" styleClass="stat-number" text="0">
+                     <font>
+                        <Font name="System Bold" size="36.0" />
+                     </font>
+                  </Label>
+                  <Label styleClass="stat-label" text="Колекцій" />
+               </children>
+               <padding>
+                  <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+               </padding>
+            </VBox>
+            
+            <!-- Картка користувачів -->
+            <VBox styleClass="stat-card" GridPane.columnIndex="1" GridPane.rowIndex="1">
+               <children>
+                  <Label styleClass="stat-icon" text="👥" />
+                  <Label fx:id="totalUsersLabel" styleClass="stat-number" text="0">
+                     <font>
+                        <Font name="System Bold" size="36.0" />
+                     </font>
+                  </Label>
+                  <Label styleClass="stat-label" text="Користувачів" />
+               </children>
+               <padding>
+                  <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+               </padding>
+            </VBox>
+         </children>
+         <padding>
+            <Insets bottom="30.0" left="30.0" right="30.0" top="0.0" />
+         </padding>
+      </GridPane>
+      
+      <!-- Індикатор завантаження -->
+      <VBox alignment="CENTER">
+         <children>
+            <ProgressIndicator fx:id="loadingIndicator" visible="false" />
+         </children>
+         <padding>
+            <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+         </padding>
+      </VBox>
+      
+      <!-- Розпорка -->
+      <Region VBox.vgrow="ALWAYS" />
+   </children>
+</VBox>

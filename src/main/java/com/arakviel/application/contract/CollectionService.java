@@ -255,4 +255,11 @@ public interface CollectionService {
      * @return список нещодавно створених публічних колекцій
      */
     List<Collection> findRecentlyCreatedPublicCollections(int limit);
+
+    /**
+     * Підраховує загальну кількість колекцій.
+     *
+     * @return загальна кількість колекцій
+     */
+    long count();
 }

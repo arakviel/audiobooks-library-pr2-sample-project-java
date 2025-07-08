@@ -153,4 +153,11 @@ public interface UserService {
      * @return Optional з користувачем, якщо аутентифікація успішна
      */
     Optional<User> authenticate(String username, String password);
+
+    /**
+     * Підраховує загальну кількість користувачів.
+     *
+     * @return загальна кількість користувачів
+     */
+    long count();
 }

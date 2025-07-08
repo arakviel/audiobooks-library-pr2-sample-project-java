@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<VBox xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.arakviel.presentation.controller.AudiobooksController">
+   <children>
+      <!-- Заголовок сторінки -->
+      <VBox styleClass="page-header">
+         <children>
+            <Label styleClass="page-title" text="Аудіокниги">
+               <font>
+                  <Font name="System Bold" size="28.0" />
+               </font>
+            </Label>
+            <Label styleClass="page-subtitle" text="Управління колекцією аудіокниг" />
+         </children>
+         <padding>
+            <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
+         </padding>
+      </VBox>
+      
+      <!-- Панель інструментів -->
+      <HBox alignment="CENTER_LEFT" spacing="10.0" styleClass="toolbar">
+         <children>
+            <Button fx:id="addButton" onAction="#handleAdd" styleClass="primary-button" text="➕ Додати аудіокнигу" />
+            <TextField fx:id="searchField" promptText="Пошук аудіокниг..." styleClass="search-field" />
+            <Button fx:id="searchButton" onAction="#handleSearch" styleClass="secondary-button" text="🔍 Пошук" />
+         </children>
+         <padding>
+            <Insets bottom="20.0" left="30.0" right="30.0" top="0.0" />
+         </padding>
+      </HBox>
+      
+      <!-- Контейнер для плиток аудіокниг -->
+      <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS">
+         <content>
+            <FlowPane fx:id="audiobooksContainer" hgap="20.0" vgap="20.0" alignment="TOP_LEFT">
+               <padding>
+                  <Insets bottom="20.0" left="30.0" right="30.0" top="20.0" />
+               </padding>
+            </FlowPane>
+         </content>
+         <VBox.margin>
+            <Insets bottom="20.0" left="0.0" right="0.0" top="0.0" />
+         </VBox.margin>
+      </ScrollPane>
+
+      <!-- Статус та індикатор завантаження -->
+      <HBox alignment="CENTER_LEFT" spacing="10.0">
+         <children>
+            <ProgressIndicator fx:id="loadingIndicator" visible="false" />
+            <Label fx:id="statusLabel" text="Готово" />
+         </children>
+         <padding>
+            <Insets bottom="10.0" left="30.0" right="30.0" top="10.0" />
+         </padding>
+      </HBox>
+   </children>
+</VBox>

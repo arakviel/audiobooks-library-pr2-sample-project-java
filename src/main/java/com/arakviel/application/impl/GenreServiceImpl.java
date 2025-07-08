@@ -214,6 +214,11 @@ public class GenreServiceImpl implements GenreService {
         return genreRepository.countAudiobooksByGenreId(genreId);
     }
 
+    @Override
+    public long count() {
+        return genreRepository.count();
+    }
+
     /**
      * Перевіряє існування жанру за назвою.
      *

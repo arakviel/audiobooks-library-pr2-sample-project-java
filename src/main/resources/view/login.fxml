@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<VBox xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.arakviel.presentation.controller.LoginController">
+   <children>
+      <VBox alignment="CENTER" spacing="20.0" styleClass="login-container">
+         <children>
+            <!-- Заголовок -->
+            <Label styleClass="app-title" text="Бібліотека Аудіокниг">
+               <font>
+                  <Font name="System Bold" size="24.0" />
+               </font>
+            </Label>
+            
+            <!-- Форма авторизації -->
+            <VBox fx:id="loginForm" alignment="CENTER" spacing="15.0" styleClass="form-container">
+               <children>
+                  <Label styleClass="form-title" text="Авторизація">
+                     <font>
+                        <Font name="System Bold" size="18.0" />
+                     </font>
+                  </Label>
+                  
+                  <TextField fx:id="loginUsername" promptText="Ім'я користувача" styleClass="form-field" />
+                  <PasswordField fx:id="loginPassword" promptText="Пароль" styleClass="form-field" />
+                  
+                  <Button fx:id="loginButton" onAction="#handleLogin" styleClass="primary-button" text="Увійти" />
+                  
+                  <Button fx:id="switchToRegisterButton" onAction="#switchToRegister" styleClass="link-button" text="Немає акаунту? Зареєструватися" />
+               </children>
+            </VBox>
+            
+            <!-- Форма реєстрації -->
+            <VBox fx:id="registerForm" alignment="CENTER" spacing="15.0" styleClass="form-container" visible="false">
+               <children>
+                  <Label styleClass="form-title" text="Реєстрація">
+                     <font>
+                        <Font name="System Bold" size="18.0" />
+                     </font>
+                  </Label>
+                  
+                  <TextField fx:id="registerUsername" promptText="Ім'я користувача" styleClass="form-field" />
+                  <TextField fx:id="registerEmail" promptText="Email" styleClass="form-field" />
+                  <PasswordField fx:id="registerPassword" promptText="Пароль" styleClass="form-field" />
+                  <PasswordField fx:id="registerConfirmPassword" promptText="Підтвердіть пароль" styleClass="form-field" />
+                  
+                  <Button fx:id="registerButton" onAction="#handleRegister" styleClass="primary-button" text="Зареєструватися" />
+                  
+                  <Button fx:id="switchToLoginButton" onAction="#switchToLogin" styleClass="link-button" text="Вже є акаунт? Увійти" />
+               </children>
+            </VBox>
+            
+            <!-- Статус та індикатор завантаження -->
+            <VBox alignment="CENTER" spacing="10.0">
+               <children>
+                  <Label fx:id="statusLabel" styleClass="status-label" visible="false" />
+                  <ProgressIndicator fx:id="progressIndicator" visible="false" />
+               </children>
+            </VBox>
+         </children>
+         <padding>
+            <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
+         </padding>
+      </VBox>
+   </children>
+</VBox>

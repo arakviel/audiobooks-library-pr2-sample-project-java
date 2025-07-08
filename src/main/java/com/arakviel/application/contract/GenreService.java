@@ -108,4 +108,11 @@ public interface GenreService {
      * @return true, якщо жанр існує
      */
     boolean existsByName(String name);
+
+    /**
+     * Підраховує загальну кількість жанрів.
+     *
+     * @return загальна кількість жанрів
+     */
+    long count();
 }

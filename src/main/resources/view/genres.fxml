@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<VBox xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1">
+   <children>
+      <!-- Заголовок сторінки -->
+      <VBox styleClass="page-header">
+         <children>
+            <Label styleClass="page-title" text="Жанри">
+               <font>
+                  <Font name="System Bold" size="28.0" />
+               </font>
+            </Label>
+            <Label styleClass="page-subtitle" text="Управління жанрами аудіокниг" />
+         </children>
+         <padding>
+            <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
+         </padding>
+      </VBox>
+      
+      <!-- Панель інструментів -->
+      <HBox alignment="CENTER_LEFT" spacing="10.0" styleClass="toolbar">
+         <children>
+            <Button styleClass="primary-button" text="➕ Додати жанр" />
+            <TextField promptText="Пошук жанрів..." styleClass="search-field" />
+            <Button styleClass="secondary-button" text="🔍 Пошук" />
+         </children>
+         <padding>
+            <Insets bottom="20.0" left="30.0" right="30.0" top="0.0" />
+         </padding>
+      </HBox>
+      
+      <!-- Контент -->
+      <VBox alignment="CENTER" VBox.vgrow="ALWAYS">
+         <children>
+            <Label styleClass="placeholder-text" text="🏷️">
+               <font>
+                  <Font size="48.0" />
+               </font>
+            </Label>
+            <Label styleClass="placeholder-text" text="Сторінка жанрів">
+               <font>
+                  <Font name="System Bold" size="24.0" />
+               </font>
+            </Label>
+            <Label styleClass="placeholder-subtitle" text="Тут буде відображатися список жанрів" />
+         </children>
+      </VBox>
+   </children>
+</VBox>

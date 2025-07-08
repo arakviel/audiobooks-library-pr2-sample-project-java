@@ -1,5 +1,6 @@
 package com.arakviel.application.impl;
 
+import com.arakviel.application.exception.MultiFieldValidationException;
 import com.arakviel.application.exception.ValidationException;
 import com.arakviel.domain.entities.Audiobook;
 import com.arakviel.domain.entities.AudiobookFile;
@@ -488,8 +489,11 @@ class AudiobookFileServiceImplTest {
     void shouldThrowExceptionForNullAudiobookId() {
         // Act & Assert
         assertThatThrownBy(() -> audiobookFileService.findByAudiobookId(null))
-                .isInstanceOf(ValidationException.class)
-                .hasMessageContaining("Ідентифікатор аудіокниги не може бути null");
+                .isInstanceOf(MultiFieldValidationException.class)
+                .satisfies(exception -> {
+                    MultiFieldValidationException validationException = (MultiFieldValidationException) exception;
+                    assertThat(validationException.hasFieldErrors("audiobookId")).isTrue();
+                });
     }
 
     @Test

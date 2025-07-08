@@ -52,8 +52,10 @@ public class CollectionServiceImpl implements CollectionService {
         }
 
         // Перевірка існування користувача (тільки якщо userId не null)
-        if (collection.getUserId() != null && !userRepository.findById(collection.getUserId()).isPresent()) {
-            throw new ValidationException("Користувач з ідентифікатором " + collection.getUserId() + " не існує.");
+        if (collection.getUserId() != null && userRepository.findById(collection.getUserId()).isEmpty()) {
+            new ValidationHelper()
+                    .addError("userId", "користувач з таким ідентифікатором не існує")
+                    .throwIfHasErrors();
         }
 
         // Перевірка на дублювання назви колекції для користувача
@@ -283,9 +285,9 @@ public class CollectionServiceImpl implements CollectionService {
 
     @Override
     public void clearCollection(UUID collectionId) {
-        if (collectionId == null) {
-            throw new ValidationException("Ідентифікатор колекції не може бути null.");
-        }
+        new ValidationHelper()
+                .validUuid("collectionId", collectionId)
+                .throwIfHasErrors();
 
         List<Audiobook> audiobooks = findAudiobooksByCollectionId(collectionId);
         for (Audiobook audiobook : audiobooks) {
@@ -348,7 +350,9 @@ public class CollectionServiceImpl implements CollectionService {
 
         // Перевірка на дублювання назви публічної колекції
         if (existsPublicCollectionByName(collection.getName())) {
-            throw new ValidationException("Публічна колекція з назвою '" + collection.getName() + "' вже існує.");
+            new ValidationHelper()
+                    .addError("name", "публічна колекція з такою назвою вже існує")
+                    .throwIfHasErrors();
         }
 
         persistenceContext.registerNew(collection);
@@ -417,7 +421,9 @@ public class CollectionServiceImpl implements CollectionService {
 
         Optional<Collection> collectionOpt = collectionRepository.findById(collectionId);
         if (!collectionOpt.isPresent()) {
-            throw new ValidationException("Колекція з ідентифікатором " + collectionId + " не існує.");
+            new ValidationHelper()
+                    .addError("collectionId", "колекція з таким ідентифікатором не існує")
+                    .throwIfHasErrors();
         }
 
         return collectionOpt.get().getUserId() == null;
@@ -443,5 +449,10 @@ public class CollectionServiceImpl implements CollectionService {
                 .positive("limit", limit)
                 .throwIfHasErrors();
         return collectionRepository.findRecentlyCreatedPublicCollections(limit);
+    }
+
+    @Override
+    public long count() {
+        return collectionRepository.count();
     }
 }

@@ -102,4 +102,11 @@ public interface AuthorService {
      * @return кількість аудіокниг
      */
     long countAudiobooksByAuthorId(UUID authorId);
+
+    /**
+     * Підраховує загальну кількість авторів.
+     *
+     * @return загальна кількість авторів
+     */
+    long count();
 }

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane fx:id="mainPane" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.arakviel.presentation.controller.MainController">
+   <left>
+      <!-- Ліве меню -->
+      <VBox fx:id="menuContainer" styleClass="menu-container">
+         <children>
+            <!-- Заголовок -->
+            <VBox alignment="CENTER" styleClass="menu-header">
+               <children>
+                  <Label styleClass="app-title" text="Аудіокниги">
+                     <font>
+                        <Font name="System Bold" size="20.0" />
+                     </font>
+                  </Label>
+                  <Label fx:id="userLabel" styleClass="user-label" text="Привіт, Користувач!" />
+               </children>
+               <padding>
+                  <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+               </padding>
+            </VBox>
+            
+            <!-- Розділювач -->
+            <Separator />
+            
+            <!-- Навігаційні кнопки -->
+            <VBox spacing="5.0" styleClass="menu-buttons">
+               <children>
+                  <Button fx:id="dashboardButton" onAction="#loadDashboard" styleClass="menu-button" text="📊 Головна" />
+                  <Button fx:id="audiobooksButton" onAction="#loadAudiobooks" styleClass="menu-button" text="📚 Аудіокниги" />
+                  <Button fx:id="authorsButton" onAction="#loadAuthors" styleClass="menu-button" text="👤 Автори" />
+                  <Button fx:id="genresButton" onAction="#loadGenres" styleClass="menu-button" text="🏷️ Жанри" />
+                  <Button fx:id="collectionsButton" onAction="#loadCollections" styleClass="menu-button" text="📁 Колекції" />
+                  <Button fx:id="progressButton" onAction="#loadProgress" styleClass="menu-button" text="📈 Прогрес" />
+               </children>
+               <padding>
+                  <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+               </padding>
+            </VBox>
+            
+            <!-- Розпорка -->
+            <Region VBox.vgrow="ALWAYS" />
+            
+            <!-- Розділювач -->
+            <Separator />
+            
+            <!-- Кнопка виходу -->
+            <VBox>
+               <children>
+                  <Button fx:id="logoutButton" onAction="#handleLogout" styleClass="logout-button" text="🚪 Вийти" />
+               </children>
+               <padding>
+                  <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+               </padding>
+            </VBox>
+         </children>
+      </VBox>
+   </left>
+   
+   <center>
+      <!-- Область контенту буде завантажуватися динамічно -->
+   </center>
+</BorderPane>

@@ -234,6 +234,11 @@ public class AuthorServiceImpl implements AuthorService {
         return authorRepository.countAudiobooksByAuthorId(authorId);
     }
 
+    @Override
+    public long count() {
+        return authorRepository.count();
+    }
+
     /**
      * Валідує дані автора перед створенням або оновленням з використанням нового підходу.
      *

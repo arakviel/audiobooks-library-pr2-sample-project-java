@@ -274,6 +274,11 @@ public class UserServiceImpl implements UserService {
         return Optional.empty();
     }
 
+    @Override
+    public long count() {
+        return userRepository.count();
+    }
+
     /**
      * Валідує дані користувача з використанням нового підходу.
      */
